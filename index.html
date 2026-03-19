@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CarniLab</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+    rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Pinyon+Script&family=Cinzel:wght@400;700&display=swap"
+    rel="stylesheet">
+  <link rel="icon" type="image/png" href="/carnibot.png" />
+  <link rel="apple-touch-icon" href="/carnibot.png" />
+  <meta name="theme-color" content="#f7f9f6" />
+  <link rel="stylesheet" href="/src/theme.css">
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ["Manrope", "sans-serif"],
+            body: ["Manrope", "sans-serif"],
+          },
+          colors: {
+            "brand-bg": "var(--color-brand-bg)",
+            "brand-surface": "var(--color-brand-surface)",
+            "brand-dark": "var(--color-brand-dark)",
+            "brand-light": "var(--color-brand-light)",
+            "brand-primary": "var(--color-brand-primary)",
+            "brand-secondary": "var(--color-brand-secondary)",
+            "brand-accent": "var(--color-brand-accent)",
+            "brand-deep": "#ecf0f1",
+          },
+          backgroundImage: {
+            'main-gradient': 'linear-gradient(to bottom right, var(--color-brand-bg), #ecf0f1)',
+            'glass-gradient': 'linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.6) 100%)',
+          },
+          keyframes: {
+            'breathing-glow': {
+              '0%, 100%': { boxShadow: '0 0 20px 5px rgba(76, 175, 80, 0.4)', opacity: '0.9' },
+              '50%': { boxShadow: '0 0 45px 15px rgba(76, 175, 80, 0.8)', opacity: '1' },
+            },
+            'float': {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-6px)' },
+            },
+            'pan-camera': {
+              '0%': { transform: 'scale(1) translate(0, 0)' },
+              '100%': { transform: 'scale(1.15) translate(-2%, -2%)' },
+            },
+            'fade-in': {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            'scale-in': {
+              '0%': { opacity: '0', transform: 'scale(0.95)' },
+              '100%': { opacity: '1', transform: 'scale(1)' },
+            },
+            'scan': {
+              '0%': { top: '0%' },
+              '100%': { top: '100%' },
+            },
+            'progress-indeterminate': {
+              '0%': { width: '0%', marginLeft: '0%' },
+              '50%': { width: '50%', marginLeft: '25%' },
+              '100%': { width: '100%', marginLeft: '0%' },
+            }
+          },
+          animation: {
+            'breathing': 'breathing-glow 4s ease-in-out infinite',
+            'float': 'float 6s ease-in-out infinite',
+            'pan': 'pan-camera 20s alternate infinite linear',
+            'fade-in': 'fade-in 0.3s ease-out forwards',
+            'scale-in': 'scale-in 0.3s ease-out forwards',
+            'scan': 'scan 3s linear infinite',
+            'progress-indeterminate': 'progress-indeterminate 2s ease-in-out infinite',
+            'spin-slow': 'spin 10s linear infinite',
+          },
+          boxShadow: {
+            '3xl': '0 35px 60px -15px rgba(0, 0, 0, 0.7)',
+            'premium': '0 20px 40px -10px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 175, 55, 0.1)',
+            'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
+            'soft': '0 18px 50px rgba(0, 0, 0, 0.08)',
+            'float': '0 20px 40px rgba(74, 93, 79, 0.1)',
+          },
+          borderRadius: {
+            'card': '32px',
+            'modal': '40px',
+            'pill': '60px',
+            'blob': '60px 28px 110px 44px',
+          }
+        },
+      },
+    };
+  </script>
+  <link rel="stylesheet" href="/index.css">
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
+</html>

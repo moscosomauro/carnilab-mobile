@@ -1,0 +1,7 @@
+release/
+dist-electron/
+node_modules/
+electron/
+electron_debug.log
+release_old/
+*.exe

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Usuario - CarniLab</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: #2E2E2E;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px;
+            background-color: #F5F1EB;
+            /* Cream background like app */
+        }
+
+        .container {
+            background: white;
+            padding: 60px;
+            border-radius: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            font-weight: 900;
+            color: #4A5D4F;
+            /* App Green */
+            border-bottom: 4px solid #4A5D4F;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            font-size: 1.8em;
+            font-weight: 800;
+            color: #2E2E2E;
+            margin-top: 40px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #4A5D4F;
+            margin-top: 25px;
+        }
+
+        ul,
+        ol {
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        blockquote {
+            background-color: #EFF6FF;
+            border-left: 5px solid #3B82F6;
+            margin: 20px 0;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-size: 0.95em;
+        }
+
+        code {
+            background-color: #f1f1f1;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        a {
+            color: #4A5D4F;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .cta-print {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .btn-print {
+            background-color: #4A5D4F;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(74, 93, 79, 0.3);
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-print:hover {
+            background-color: #3b4a3f;
+        }
+
+        .screenshot {
+            width: 100%;
+            max-width: 400px;
+            display: block;
+            margin: 30px auto;
+            border-radius: 20px;
+            border: 4px solid #eee;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+                padding: 0;
+                border-radius: 0;
+            }
+
+            .cta-print {
+                display: none;
+            }
+
+            h1 {
+                page-break-before: always;
+            }
+
+            h1:first-of-type {
+                page-break-before: auto;
+            }
+
+            .screenshot {
+                max-width: 60%;
+                box-shadow: none;
+                border: 2px solid #ddd;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="cta-print">
+        <p>Este es tu manual completo con capturas.</p>
+        <button onclick="window.print()" class="btn-print">🖨️ Guardar como PDF</button>
+    </div>
+
+    <div class="container">
+        <h1>Manual de Usuario - CarniLab Móvil</h1>
+        <img src="manual_images/00_cover.png" onerror="this.style.display='none'" class="screenshot"
+            style="max-width: 100%; border: none; box-shadow: none;">
+
+        <p>Bienvenido a <strong>CarniLab</strong>, la aplicación definitiva para la gestión profesional y estética de tu
+            colección de plantas carnívoras.</p>
+        <p>Este manual te guiará paso a paso por todas las funcionalidades de la aplicación, desde tus primeros pasos
+            hasta el uso de herramientas avanzadas como la genética y el diario de cultivo inteligente.</p>
+
+        <h2>Índice</h2>
+        <ol>
+            <li><a href="#1-registro">Registro e Inicio de Sesión</a></li>
+            <li><a href="#2-navegacion">Navegación Principal</a></li>
+            <li><a href="#3-inventario">Gestión de Plantas (Inventario)</a></li>
+            <li><a href="#4-diario">Diario de Cultivo Profundo</a></li>
+            <li><a href="#5-genetica">Cruzamientos y Genética</a></li>
+            <li><a href="#6-alertas">Alertas y Tareas</a></li>
+            <li><a href="#7-scanner">Escáner QR</a></li>
+            <li><a href="#8-perfil">Perfil y Configuración</a></li>
+        </ol>
+
+        <h2 id="1-registro">1. Registro e Inicio de Sesión</h2>
+        <p>Al abrir CarniLab por primera vez, verás la pantalla de bienvenida.</p>
+
+        <h3>Crear una cuenta</h3>
+        <ol>
+            <li>Pulsa en <strong>"Crear Cuenta"</strong>.</li>
+            <li>Introduce un <strong>nombre de usuario</strong> único (esto es importante para compartir tu perfil más
+                adelante).</li>
+            <li>Ingresa tu correo electrónico y una contraseña segura.</li>
+            <li>Pulsa <strong>"Registrarse"</strong>. Recibirás una confirmación y entrarás directamente a la app.</li>
+        </ol>
+        <blockquote><strong>Nota:</strong> Tu cuenta te da acceso a la sincronización en la nube, asegurando que nunca
+            pierdas tus datos aunque cambies de teléfono.</blockquote>
+
+        <h2 id="2-navegacion">2. Navegación Principal</h2>
+        <p>La aplicación se controla mediante una <strong>barra de navegación</strong> en la parte inferior de la
+            pantalla:</p>
+
+        <img src="manual_images/01_dashboard.png" class="screenshot" alt="Dashboard Principal">
+
+        <ul>
+            <li>🏠 <strong>Home (Dashboard):</strong> Visión general de tu colección, alertas pendientes y clima.</li>
+            <li>🌿 <strong>Plantas:</strong> Tu inventario completo. Aquí es donde gestionas cada ejemplar.</li>
+            <li>📁 <strong>Diario / Genética:</strong> Acceso rápido al registro de actividades y herramientas de cría.
+            </li>
+            <li>👤 <strong>Perfil:</strong> Tus datos, certificado de cultivador y configuraciones.</li>
+        </ul>
+
+        <h2 id="3-inventario">3. Gestión de Plantas (Inventario)</h2>
+        <p>Es el corazón de la app. Aquí registras cada ser vivo de tu colección.</p>
+
+        <img src="manual_images/03_inventory.png" class="screenshot" alt="Inventario de Plantas">
+
+        <h3>Añadir una Planta</h3>
+        <ol>
+            <li>Ve a la sección <strong>Plantas</strong> (🌿) o pulsa el botón flotante <strong>"+"</strong>.</li>
+            <li>Rellena los datos básicos:
+                <ul>
+                    <li><strong>Nombre:</strong> Apodo o ID (ej: "Dionaea 'B52' #1").</li>
+                    <li><strong>Especie:</strong> Selecciona de la lista (Dionaea, Sarracenia, Nepenthes, etc.).</li>
+                    <li><strong>Genética:</strong> (Opcional) Si conoces los padres.</li>
+                    <li><strong>Procedencia:</strong> ¿Es comprada, semilla propia o esqueje?</li>
+                </ul>
+            </li>
+            <li><strong>Foto:</strong> Sube una foto actual. Es crucial para el seguimiento visual.</li>
+            <li>Guarda. ¡Tu planta ya tiene su ficha digital!</li>
+        </ol>
+
+        <h3>Detalles de la Planta</h3>
+        <p>Pulsa sobre cualquier planta para ver su ficha completa:</p>
+        <ul>
+            <li><strong>Historial:</strong> Timeline de eventos específicos de esa planta.</li>
+            <li><strong>Código QR:</strong> Genera un código único que puedes imprimir y pegar en la maceta.</li>
+            <li><strong>Editar/Borrar:</strong> Opciones disponibles en la esquina superior.</li>
+        </ul>
+
+        <h2 id="4-diario">4. Diario de Cultivo Profundo (NUEVO)</h2>
+        <p>La herramienta más potente para cultivadores serios. Registra riego, fertilización, poda y observaciones.</p>
+
+        <img src="manual_images/04_diary.png" class="screenshot" alt="Diario de Cultivo">
+
+        <h3>Vistas</h3>
+        <ul>
+            <li><strong>Lista (Timeline):</strong> Una línea de tiempo visual que conecta tus eventos cronológicamente.
+            </li>
+            <li><strong>Calendario:</strong> Pulsa el icono de calendario arriba para ver una cuadrícula mensual. Los
+                días con puntos de colores indican actividad.</li>
+        </ul>
+        <h3>Crear un Registro (Entrada)</h3>
+        <p>Pulsa el botón <strong>"+"</strong> en la pantalla de Diario:</p>
+        <ol>
+            <li><strong>Selección de Plantas (¡Novedad!):</strong>
+                <ul>
+                    <li>Puedes seleccionar <strong>una o múltiples plantas</strong>.</li>
+                    <li><em>Ejemplo:</em> Si regaste 10 Sarracenias hoy, selecciónalas todas y crea una única entrada.
+                        ¡Ahorra tiempo!</li>
+                </ul>
+            </li>
+            <li><strong>Tipo de Actividad:</strong>
+                <ul>
+                    <li>💧 <strong>Riego:</strong> Hidratación.</li>
+                    <li>🧪 <strong>Fertilización:</strong> Abono o alimentación.</li>
+                    <li>✂️ <strong>Poda:</strong> Corte de hojas secas o trampas viejas.</li>
+                    <li>👁️ <strong>Observación:</strong> Notas generales, plagas, etc.</li>
+                </ul>
+            </li>
+            <li><strong>Datos de Crecimiento:</strong>
+                <ul>
+                    <li>Anota la <strong>Altura (cm)</strong> y número de <strong>Hojas</strong> si quieres ver gráficas
+                        de evolución.</li>
+                </ul>
+            </li>
+            <li><strong>Fotos:</strong> Sube evidencia visual del estado actual.</li>
+        </ol>
+
+        <h2 id="5-genetica">5. Cruzamientos y Genética</h2>
+        <p>Gestiona tus proyectos de hibridación.</p>
+
+        <img src="manual_images/05_genetics.png" class="screenshot" alt="Genética y Cruces">
+
+        <ol>
+            <li>Accede desde el menú principal o Dashboard -> <strong>Genética</strong>.</li>
+            <li><strong>Nuevo Cruce:</strong>
+                <ul>
+                    <li>Selecciona <strong>Madre</strong> (productora de semillas) y <strong>Padre</strong> (donante de
+                        polen).</li>
+                    <li>Fecha de polinización.</li>
+                </ul>
+            </li>
+            <li><strong>Seguimiento:</strong>
+                <ul>
+                    <li>Marca el estado: <em>Polinizado > Cosechado > Sembrado > Germinado</em>.</li>
+                    <li>El sistema calcula automáticamente el código del cruce.</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h2 id="6-alertas">6. Alertas y Tareas</h2>
+        <p>Nunca olvides un riego.</p>
+
+        <img src="manual_images/06_alerts.png" class="screenshot" alt="Alertas">
+
+        <ul>
+            <li>El sistema te sugerirá alertas basadas en la especie.</li>
+            <li>En el <strong>Dashboard</strong>, verás las "Tareas para Hoy".</li>
+            <li>Al completar una tarea, puedes convertirla automáticamente en una entrada del Diario.</li>
+        </ul>
+
+        <h2 id="7-scanner">7. Escáner QR</h2>
+        <p>Cada planta tiene un DNI único.</p>
+        <ol>
+            <li>En la app, hay un icono de <strong>Escáner</strong> (cámara) en la esquina superior.</li>
+            <li>Apunta a la etiqueta QR de una planta.</li>
+            <li>¡Magia! Te llevará directamente a la ficha de esa planta.</li>
+        </ol>
+
+        <h2 id="8-perfil">8. Perfil y Configuración</h2>
+        <img src="manual_images/08_profile.png" class="screenshot" alt="Perfil">
+        <ul>
+            <li><strong>Vivero Online:</strong> Si tienes activado el modo "Público", otros usuarios pueden ver las
+                plantas que marques como disponibles.</li>
+            <li><strong>Certificado:</strong> CarniLab genera un "Certificado de Cultivador" estético que puedes
+                compartir.</li>
+        </ul>
+
+        <hr />
+        <p><em>¡Feliz cultivo! 🌱</em></p>
+    </div>
+</body>
+
+</html>

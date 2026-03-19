@@ -1,0 +1,320 @@
+{
+    "layout": {
+        "menu": {
+            "dashboard": "Dashboard",
+            "addPlant": "Add Plant",
+            "myPlants": "My Plants",
+            "shop": "Public Shop",
+            "diary": "Grow Diary",
+            "crosses": "Hybrid Manager",
+            "messages": "Messages",
+            "ai": "AI Assistant"
+        },
+        "slogan": "Cultivating Life",
+        "plan": "Plan",
+        "logout": "Logout"
+    },
+    "dashboard": {
+        "slogan": "Cultivating Life",
+        "ownerTitle": "Nursery Owner",
+        "genLab": "Gen Lab",
+        "scanner": "Scanner",
+        "stats": {
+            "plants": "Total Registered",
+            "crosses": "Active",
+            "alerts": "New"
+        },
+        "menu": {
+            "globalNetwork": "Global Network",
+            "myNursery": "My Online Nursery",
+            "shopBeta": "Public Shop (Beta)",
+            "climate": "Climate Monitor",
+            "alerts": "View Alerts",
+            "backup": "Backup & Cloud",
+            "calculator": "Genetic Calculator",
+            "priceControl": "Price Control"
+        },
+        "bottomNav": {
+            "home": "Home",
+            "map": "Map",
+            "messages": "Messages",
+            "profile": "Profile"
+        },
+        "editProfile": {
+            "title": "Public Name",
+            "cancel": "Cancel",
+            "save": "Save"
+        }
+    },
+    "addPlant": {
+        "titleNew": "Add Plant",
+        "titleEdit": "Edit Plant",
+        "subtitle": "Inventory and Photos",
+        "addPhoto": "Add Cover Photo",
+        "cover": "COVER",
+        "saleMode": "Sale Mode",
+        "requiresElite": "Requires Elite",
+        "saleActive": "Sale Active",
+        "salePrice": "Sale Price ($)*",
+        "namePlaceholder": "Name*",
+        "speciesSelect": "Select Species*",
+        "acquisitionDate": "Acquisition Date",
+        "costPlaceholder": "Cost",
+        "originPlaceholder": "Origin",
+        "locationPlaceholder": "Location",
+        "notesPlaceholder": "Notes",
+        "statusLabel": "Status",
+        "status": {
+            "healthy": "Healthy",
+            "regular": "Regular",
+            "critical": "Critical"
+        },
+        "saveButton": "Save Plant",
+        "saving": "Saving...",
+        "validationError": "Validation Error",
+        "invalidData": "Invalid Data",
+        "errorSaving": "Error saving main plant."
+    },
+    "plantList": {
+        "title": "My Plants",
+        "collectionCount": "{{count}} plants in collection",
+        "addPlant": "ADD PLANT",
+        "searchPlaceholder": "Search plant...",
+        "noPlants": "No plants found",
+        "filters": {
+            "all": "All",
+            "forSale": "For Sale",
+            "healthy": "Healthy",
+            "regular": "Regular",
+            "critical": "Critical"
+        },
+        "detail": {
+            "edit": "Edit",
+            "delete": "Delete",
+            "close": "Close",
+            "confirmDelete": "Are you sure you want to delete this plant?"
+        },
+        "qrOptions": {
+            "title": "Printing Options",
+            "labelQR": "QR Label",
+            "labelDesc": "For pot label",
+            "sheet": "Technical Sheet",
+            "sheetDesc": "Complete with QR",
+            "cancel": "Cancel"
+        }
+    },
+    "shop": {
+        "title": "Pro Shop Manager",
+        "viewShop": "View Shop",
+        "copyLink": "Copy Link",
+        "qrCode": "QR Code",
+        "tabs": {
+            "catalog": "Catalog",
+            "orders": "Orders",
+            "settings": "Settings"
+        },
+        "metrics": {
+            "products": "Products",
+            "inactive": "inactive",
+            "lowStock": "Low Stock",
+            "lowStockDesc": "≤ 1 unit",
+            "revenue": "Revenue",
+            "completed": "completed",
+            "bestSeller": "Best Seller",
+            "bestSellerDesc": "Top product"
+        },
+        "loading": "Loading...",
+        "catalog": {
+            "searchPlaceholder": "Search products...",
+            "allCategories": "All Categories",
+            "plants": "Plants",
+            "supplies": "Supplies",
+            "merch": "Merch",
+            "newest": "Newest",
+            "priceLow": "Lowest Price",
+            "priceHigh": "Highest Price",
+            "minStock": "Lowest Stock",
+            "newProduct": "New Product",
+            "featured": "Featured",
+            "lastUnit": "Last Unit",
+            "outOfStock": "Out of Stock",
+            "stock": "Stock",
+            "visible": "Visible",
+            "hidden": "Hidden"
+        },
+        "orders": {
+            "all": "All",
+            "pending": "Pending",
+            "paid": "Paid",
+            "shipped": "Shipped",
+            "exportCSV": "Export CSV",
+            "noOrders": "No orders with this filter.",
+            "total": "Total",
+            "changeStatus": "Change Status",
+            "status": {
+                "pending": "Pending",
+                "paid": "Paid",
+                "shipped": "Shipped",
+                "cancelled": "Cancelled"
+            }
+        },
+        "settings": {
+            "profileTitle": "Shop Profile",
+            "profileDesc": "Customize how your public shop looks. This information will be shown to your customers.",
+            "shopName": "Shop Name",
+            "bio": "Description / Bio",
+            "specialty": "Specialty",
+            "social": "Social Media",
+            "save": "Save Changes",
+            "note": "Note: Profile saving functionality requires a new table in Supabase. For now, these changes are saved only in the current session."
+        },
+        "modal": {
+            "editProduct": "Edit Product",
+            "newProduct": "New Product",
+            "title": "Title",
+            "description": "Description",
+            "price": "Price",
+            "stock": "Stock",
+            "category": "Category",
+            "image": "Image",
+            "uploading": "Uploading...",
+            "changeImage": "Change Image",
+            "uploadImage": "Upload Image",
+            "cancel": "Cancel",
+            "update": "Update",
+            "create": "Create Product"
+        },
+        "messages": {
+            "uploadError": "Error uploading image",
+            "requiredFields": "Title and price are required",
+            "updated": "Product updated",
+            "created": "Product created",
+            "confirmDelete": "Delete product?",
+            "deleted": "Product deleted",
+            "activated": "Product activated",
+            "deactivated": "Product deactivated",
+            "featuredUpdated": "Featured product updated",
+            "statusUpdated": "Order status updated",
+            "copied": "Copied to clipboard",
+            "exported": "Orders exported"
+        }
+    },
+    "crosses": {
+        "title": "Crosses Manager",
+        "subtitle": "active genetic projects",
+        "stats": {
+            "process": "PROCESS",
+            "success": "SUCCESS"
+        },
+        "searchPlaceholder": "Search by name or parents...",
+        "filters": {
+            "all": "ALL",
+            "inProcess": "IN PROCESS",
+            "completed": "COMPLETED",
+            "failed": "FAILED"
+        },
+        "list": {
+            "syncing": "SYNCING",
+            "seeds": "SEEDS",
+            "plants": "PLANTS",
+            "days": "DAYS",
+            "error": "ERROR"
+        },
+        "empty": "No projects in this category",
+        "newCross": "NEW CROSS",
+        "modalAdd": {
+            "title": "New Cross",
+            "subtitle": "Start a genetic project",
+            "nameLabel": "Project Name",
+            "namePlaceholder": "Ex: Dionaea B52 x Red Dragon",
+            "hybridPhoto": "Hybrid Photo (Optional)",
+            "captureHybrid": "CAPTURE HYBRID",
+            "mother": "MOTHER",
+            "father": "FATHER",
+            "photoPlaceholder": "PHOTO",
+            "nameInputPlaceholder": "Name",
+            "dateLabel": "Cross Date",
+            "notesLabel": "Bio Notes",
+            "notesPlaceholder": "Pollination details...",
+            "saveButton": "SAVE PROJECT",
+            "saving": "SAVING..."
+        },
+        "modalDetail": {
+            "tree": "TREE",
+            "eliteFunction": "ELITE Function",
+            "started": "Started:",
+            "seedsObtained": "SEEDS",
+            "germinated": "GERMINATED",
+            "status": "STATUS",
+            "cancel": "CANCEL",
+            "save": "SAVE",
+            "editResults": "EDIT RESULTS",
+            "confirmDelete": "Delete?",
+            "registerElite": "REGISTER ELITE CULTIVAR",
+            "noNotes": "No genetic notes available"
+        },
+        "status": {
+            "inProcess": "In Process",
+            "completed": "Completed",
+            "failed": "Failed"
+        }
+    },
+    "profile": {
+        "title": "My Profile",
+        "activeLicense": "Active License",
+        "notifications": "Notifications",
+        "notificationsBlocked": "Blocked in browser",
+        "notificationsActive": "Alerts active",
+        "notificationsInactive": "Receive instant alerts",
+        "localTest": "Local Test",
+        "serverTest": "Server Test",
+        "publicNursery": "My Public Nursery",
+        "reloadApp": "Reload App",
+        "reloadProblem": "Fix loading issues",
+        "logout": "Log Out",
+        "managePlan": "MANAGE MY PLAN",
+        "plan": "Plan",
+        "language": "Language",
+        "selectLanguage": "Select Language",
+        "cancel": "Cancel",
+        "save": "Save",
+        "changeLanguage": "Change Language",
+        "currentLanguage": "Current Language"
+    },
+    "planModal": {
+        "title": "Upgrade your Lab",
+        "subtitle": "Choose the ideal plan for your crop",
+        "monthly": "Monthly",
+        "annual": "Annual",
+        "basic": "Basic Plan",
+        "free": "FREE",
+        "basicDesc": "Public Online Nursery and essential functions",
+        "currentPlan": "Current Plan",
+        "downgradeBasic": "Downgrade to Basic",
+        "pro": "Pro Plan",
+        "month": "/mo",
+        "year": "/yr",
+        "proFeatures": {
+            "unlimited": "Unlimited Cultivation (No caps)",
+            "nursery": "Online Nursery (Public Portfolio)",
+            "genealogy": "Advanced Genealogy (List)"
+        },
+        "registered": "Subscribed",
+        "processing": "Processing...",
+        "upgradePro": "Upgrade to Pro",
+        "choosePro": "Choose Pro",
+        "elite": "Elite Plan",
+        "eliteFeatures": {
+            "ai": "IA Carni Bot (ID & Diagnosis)",
+            "shop": "Full Public Online Shop",
+            "tree": "Visual Genealogy Tree (Lab)"
+        },
+        "upgradeElite": "Upgrade to Elite",
+        "chooseElite": "Choose Elite",
+        "maybeLater": "Maybe later"
+    },
+    "common": {
+        "back": "Back",
+        "loading": "Loading..."
+    }
+}

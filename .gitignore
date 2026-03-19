@@ -1,0 +1,63 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+build_log.txt
+tsc_error.txt
+tsc_error_utf8.txt
+git_status_full.txt
+
+# Environment Variables (CRÍTICO - No commitear credenciales)
+.env
+.env.local
+.env.production
+.env.*.local
+.env.txt
+
+# Keys and Secrets (CRÍTICO - No commitear)
+keys.txt
+def_keys.txt
+final_keys.txt
+new_keys.txt
+vapid_keys.json
+vapid_final.json
+
+# Dependencies
+node_modules
+
+# Build outputs
+dist
+dist-ssr
+dist-electron
+dev-dist
+release
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Claude Code
+.claude/
+
+# Vercel
+.vercel/
+
+# Debug files
+debug_*.js
+debug_*.mjs
+
+# Windows
+nul
+Thumbs.db

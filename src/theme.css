@@ -1,0 +1,408 @@
+:root {
+  /* =========================================
+     DEFAULT THEME (Modern Clinical / Organic)
+     ========================================= */
+  /* Original Dashboard Colors */
+  --color-brand-bg: #f7f9f6;
+  --color-brand-surface: #ffffff;
+  --color-brand-dark: #2E2E2E;
+  /* Was #2c3e50, updated to match Dashboard text */
+  --color-brand-light: #7f8c8d;
+  --color-brand-primary: #5E7B4C;
+  /* Original Green */
+  --color-brand-secondary: #4A3325;
+  /* Original Brown */
+  --color-brand-accent: #D9C9A2;
+  /* Original Beige */
+  --color-brand-text-on-primary: #ffffff;
+}
+
+/* =========================================
+     CHRISTMAS THEME 🎄
+     ========================================= */
+body.theme-christmas {
+  --color-brand-bg: #c0392b;
+  /* Santa Red Background */
+  --color-brand-surface: #ffffff;
+  --color-brand-dark: #2c3e50;
+  /* Dark text for contrast */
+  --color-brand-light: #ecf0f1;
+  --color-brand-primary: #ffffff;
+  /* White Elements */
+  --color-brand-secondary: #27ae60;
+  /* Green Secondary */
+  --color-brand-accent: #c0392b;
+  /* Red Accent (Christmas) */
+  --color-brand-text-on-primary: #c0392b;
+  /* Red Text on White buttons */
+}
+
+/* =========================================
+     HALLOWEEN THEME 🎃
+     ========================================= */
+body.theme-halloween {
+  --color-brand-bg: #1a1a1a;
+  --color-brand-surface: #2d2d2d;
+  --color-brand-dark: #ffffff;
+  /* White text for dark mode */
+  --color-brand-light: #bdc3c7;
+  --color-brand-primary: #e67e22;
+  /* Pumpkin Orange */
+  --color-brand-secondary: #8e44ad;
+  /* Witch Purple */
+  --color-brand-accent: #c0392b;
+  /* Blood Red */
+  --color-brand-text-on-primary: #ffffff;
+}
+
+/* =========================================
+     PRIMAVERA (SPRING) THEME 🌸
+     ========================================= */
+body.theme-spring {
+  --color-brand-bg: #fef9f3;
+  --color-brand-surface: #ffffff;
+  --color-brand-dark: #4a5568;
+  --color-brand-light: #cbd5e0;
+  --color-brand-primary: #ff69b4;
+  /* Hot Pink */
+  --color-brand-secondary: #98d8c8;
+  /* Mint Green */
+  --color-brand-accent: #ffd700;
+  /* Golden Yellow */
+  --color-brand-text-on-primary: #ffffff;
+}
+
+/* =========================================
+     VERANO (SUMMER) THEME ☀️
+     ========================================= */
+body.theme-summer {
+  --color-brand-bg: #fff8dc;
+  --color-brand-surface: #fffacd;
+  --color-brand-dark: #2d3748;
+  --color-brand-light: #a0aec0;
+  --color-brand-primary: #ffa500;
+  /* Orange */
+  --color-brand-secondary: #00ced1;
+  /* Turquoise */
+  --color-brand-accent: #ff6347;
+  /* Tomato Red */
+  --color-brand-text-on-primary: #ffffff;
+}
+
+/* =========================================
+     OTOÑO (AUTUMN) THEME 🍂
+     ========================================= */
+body.theme-autumn {
+  --color-brand-bg: #faf0e6;
+  --color-brand-surface: #fff5ee;
+  --color-brand-dark: #3e2723;
+  --color-brand-light: #8d6e63;
+  --color-brand-primary: #d2691e;
+  /* Chocolate */
+  --color-brand-secondary: #cd853f;
+  /* Peru */
+  --color-brand-accent: #dc143c;
+  /* Crimson */
+  --color-brand-text-on-primary: #ffffff;
+}
+
+/* =========================================
+     INVIERNO (WINTER) THEME ❄️
+     ========================================= */
+body.theme-winter {
+  --color-brand-bg: #f0f8ff;
+  --color-brand-surface: #ffffff;
+  --color-brand-dark: #1e3a5f;
+  --color-brand-light: #90caf9;
+  --color-brand-primary: #4682b4;
+  /* Steel Blue */
+  --color-brand-secondary: #87ceeb;
+  /* Sky Blue */
+  --color-brand-accent: #b0c4de;
+  /* Light Steel Blue */
+  --color-brand-text-on-primary: #ffffff;
+}
+
+/* =========================================
+     ANIMATIONS & EFFECTS
+     ========================================= */
+
+/* Smooth theme transitions */
+body,
+div,
+button,
+span,
+p,
+h1,
+h2,
+h3,
+input {
+  transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease;
+}
+
+/* ===== CHRISTMAS ANIMATIONS ===== */
+@keyframes snowfall {
+  0% {
+    transform: translateY(-10px) translateX(0);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(100vh) translateX(50px);
+    opacity: 0;
+  }
+}
+
+@keyframes sparkle {
+
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes jingle {
+
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  25% {
+    transform: rotate(-2deg);
+  }
+
+  75% {
+    transform: rotate(2deg);
+  }
+}
+
+body.theme-christmas button {
+  animation: jingle 4s ease-in-out infinite;
+}
+
+body.theme-christmas button:hover {
+  animation: sparkle 2s ease-in-out infinite;
+  box-shadow: 0 0 20px rgba(192, 57, 43, 0.6);
+}
+
+/* ===== HALLOWEEN ANIMATIONS ===== */
+@keyframes ghostFloat {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes spookyPulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(230, 126, 34, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 20px rgba(230, 126, 34, 0.8), 0 0 30px rgba(142, 68, 173, 0.5);
+  }
+}
+
+@keyframes flicker {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+
+  75% {
+    opacity: 0.9;
+  }
+}
+
+/* Flicker effect removed - was too distracting */
+/* body.theme-halloween {
+  animation: flicker 3s ease-in-out infinite;
+} */
+
+body.theme-halloween button {
+  animation: ghostFloat 3s ease-in-out infinite;
+}
+
+body.theme-halloween button:hover {
+  animation: spookyPulse 1.5s ease-in-out infinite;
+}
+
+/* ===== PRIMAVERA (SPRING) ANIMATIONS ===== */
+@keyframes bloom {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+
+@keyframes petalFloat {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  100% {
+    transform: translateY(10px) rotate(5deg);
+  }
+}
+
+body.theme-spring button {
+  animation: bloom 3s ease-in-out infinite;
+}
+
+body.theme-spring button:hover {
+  box-shadow: 0 0 15px rgba(255, 105, 180, 0.5);
+  animation: bloom 1.5s ease-in-out infinite;
+}
+
+/* ===== VERANO (SUMMER) ANIMATIONS ===== */
+@keyframes sunPulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 10px rgba(255, 165, 0, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 25px rgba(255, 165, 0, 0.8), 0 0 35px rgba(255, 99, 71, 0.5);
+  }
+}
+
+@keyframes heatWave {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  25% {
+    transform: translateY(-2px);
+  }
+
+  75% {
+    transform: translateY(2px);
+  }
+}
+
+body.theme-summer button {
+  animation: heatWave 2s ease-in-out infinite;
+}
+
+body.theme-summer button:hover {
+  animation: sunPulse 1.5s ease-in-out infinite;
+}
+
+/* ===== OTOÑO (AUTUMN) ANIMATIONS ===== */
+@keyframes leafFall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  100% {
+    transform: translateY(5px) rotate(3deg);
+  }
+}
+
+@keyframes autumnGlow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(210, 105, 30, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 18px rgba(210, 105, 30, 0.6), 0 0 25px rgba(205, 133, 63, 0.4);
+  }
+}
+
+body.theme-autumn button {
+  animation: leafFall 3s ease-in-out infinite alternate;
+}
+
+body.theme-autumn button:hover {
+  animation: autumnGlow 2s ease-in-out infinite;
+}
+
+/* ===== INVIERNO (WINTER) ANIMATIONS ===== */
+@keyframes frostShimmer {
+
+  0%,
+  100% {
+    box-shadow: 0 0 10px rgba(70, 130, 180, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 20px rgba(70, 130, 180, 0.6), 0 0 30px rgba(135, 206, 235, 0.4);
+  }
+}
+
+@keyframes iceFloat {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+body.theme-winter button {
+  animation: iceFloat 4s ease-in-out infinite;
+}
+
+body.theme-winter button:hover {
+  animation: frostShimmer 2s ease-in-out infinite;
+}
+
+/* ===== DEFAULT THEME SUBTLE ANIMATIONS ===== */
+@keyframes gentleFloat {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+body:not(.theme-christmas):not(.theme-halloween):not(.theme-spring):not(.theme-summer):not(.theme-autumn):not(.theme-winter) button:hover {
+  animation: gentleFloat 2s ease-in-out infinite;
+  box-shadow: 0 4px 12px rgba(94, 123, 76, 0.2);
+}

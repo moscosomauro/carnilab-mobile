@@ -1,0 +1,320 @@
+{
+    "layout": {
+        "menu": {
+            "dashboard": "Painel",
+            "addPlant": "Adicionar Planta",
+            "myPlants": "Minhas Plantas",
+            "shop": "Loja Pública",
+            "diary": "Diário de Cultivo",
+            "crosses": "Gestor de Híbridos",
+            "messages": "Mensagens",
+            "ai": "Assistente IA"
+        },
+        "slogan": "Cultivando Vida",
+        "plan": "Plano",
+        "logout": "Sair"
+    },
+    "dashboard": {
+        "slogan": "Cultivando Vida",
+        "ownerTitle": "Proprietário do Viveiro",
+        "genLab": "Gen Lab",
+        "scanner": "Scanner",
+        "stats": {
+            "plants": "Total Registradas",
+            "crosses": "Ativas",
+            "alerts": "Novas"
+        },
+        "menu": {
+            "globalNetwork": "Rede Global",
+            "myNursery": "Meu Viveiro Online",
+            "shopBeta": "Loja Pública (Beta)",
+            "climate": "Monitor Climático",
+            "alerts": "Ver Alertas",
+            "backup": "Backup e Nuvem",
+            "calculator": "Calculadora Genética",
+            "priceControl": "Controle de Preços"
+        },
+        "bottomNav": {
+            "home": "Início",
+            "map": "Mapa",
+            "messages": "Mensagens",
+            "profile": "Perfil"
+        },
+        "editProfile": {
+            "title": "Nome Público",
+            "cancel": "Cancelar",
+            "save": "Salvar"
+        }
+    },
+    "addPlant": {
+        "titleNew": "Adicionar Planta",
+        "titleEdit": "Editar Planta",
+        "subtitle": "Inventário e Fotos",
+        "addPhoto": "Adicionar Foto de Capa",
+        "cover": "CAPA",
+        "saleMode": "Modo de Venda",
+        "requiresElite": "Requer Elite",
+        "saleActive": "Venda Ativa",
+        "salePrice": "Preço de Venda ($)*",
+        "namePlaceholder": "Nome*",
+        "speciesSelect": "Selecionar Espécie*",
+        "acquisitionDate": "Data de Aquisição",
+        "costPlaceholder": "Custo",
+        "originPlaceholder": "Origem",
+        "locationPlaceholder": "Localização",
+        "notesPlaceholder": "Notas",
+        "statusLabel": "Estado",
+        "status": {
+            "healthy": "Saudável",
+            "regular": "Regular",
+            "critical": "Crítico"
+        },
+        "saveButton": "Salvar Planta",
+        "saving": "Salvando...",
+        "validationError": "Erro de Validação",
+        "invalidData": "Dados Inválidos",
+        "errorSaving": "Erro ao salvar a planta principal."
+    },
+    "plantList": {
+        "title": "Minhas Plantas",
+        "collectionCount": "{{count}} plantas na coleção",
+        "addPlant": "ADICIONAR PLANTA",
+        "searchPlaceholder": "Buscar planta...",
+        "noPlants": "Nenhuma planta encontrada",
+        "filters": {
+            "all": "Todas",
+            "forSale": "À Venda",
+            "healthy": "Saudável",
+            "regular": "Regular",
+            "critical": "Crítico"
+        },
+        "detail": {
+            "edit": "Editar",
+            "delete": "Excluir",
+            "close": "Fechar",
+            "confirmDelete": "Tem certeza que deseja excluir esta planta?"
+        },
+        "qrOptions": {
+            "title": "Opções de Impressão",
+            "labelQR": "Etiqueta QR",
+            "labelDesc": "Para colar no vaso",
+            "sheet": "Ficha Técnica",
+            "sheetDesc": "Completa com QR",
+            "cancel": "Cancelar"
+        }
+    },
+    "shop": {
+        "title": "Gestor de Loja Pro",
+        "viewShop": "Ver Loja",
+        "copyLink": "Copiar Link",
+        "qrCode": "Código QR",
+        "tabs": {
+            "catalog": "Catálogo",
+            "orders": "Pedidos",
+            "settings": "Configurações"
+        },
+        "metrics": {
+            "products": "Produtos",
+            "inactive": "inativos",
+            "lowStock": "Estoque Baixo",
+            "lowStockDesc": "≤ 1 unidade",
+            "revenue": "Receita",
+            "completed": "concluídos",
+            "bestSeller": "Mais Vendido",
+            "bestSellerDesc": "Top produto"
+        },
+        "loading": "Carregando...",
+        "catalog": {
+            "searchPlaceholder": "Buscar produtos...",
+            "allCategories": "Todas as categorias",
+            "plants": "Plantas",
+            "supplies": "Insumos",
+            "merch": "Merch",
+            "newest": "Mais Recente",
+            "priceLow": "Menor Preço",
+            "priceHigh": "Maior Preço",
+            "minStock": "Menor Estoque",
+            "newProduct": "Novo Produto",
+            "featured": "Destaque",
+            "lastUnit": "Última unidade",
+            "outOfStock": "Esgotado",
+            "stock": "Estoque",
+            "visible": "Visível",
+            "hidden": "Oculto"
+        },
+        "orders": {
+            "all": "Todos",
+            "pending": "Pendentes",
+            "paid": "Pagos",
+            "shipped": "Enviados",
+            "exportCSV": "Exportar CSV",
+            "noOrders": "Sem pedidos com este filtro.",
+            "total": "Total",
+            "changeStatus": "Alterar Status",
+            "status": {
+                "pending": "Pendente",
+                "paid": "Pago",
+                "shipped": "Enviado",
+                "cancelled": "Cancelado"
+            }
+        },
+        "settings": {
+            "profileTitle": "Perfil da Loja",
+            "profileDesc": "Personalize como sua loja pública aparece. Esta informação será mostrada aos seus clientes.",
+            "shopName": "Nome da Loja",
+            "bio": "Descrição / Bio",
+            "specialty": "Especialidade",
+            "social": "Redes Sociais",
+            "save": "Salvar Alterações",
+            "note": "Nota: A funcionalidade de salvar perfil requer uma nova tabela no Supabase. Por enquanto, essas alterações são salvas apenas na sessão atual."
+        },
+        "modal": {
+            "editProduct": "Editar Produto",
+            "newProduct": "Novo Produto",
+            "title": "Título",
+            "description": "Descrição",
+            "price": "Preço",
+            "stock": "Estoque",
+            "category": "Categoria",
+            "image": "Imagem",
+            "uploading": "Enviando...",
+            "changeImage": "Alterar Imagem",
+            "uploadImage": "Enviar Imagem",
+            "cancel": "Cancelar",
+            "update": "Atualizar",
+            "create": "Criar Produto"
+        },
+        "messages": {
+            "uploadError": "Erro ao enviar imagem",
+            "requiredFields": "Título e preço são obrigatórios",
+            "updated": "Produto atualizado",
+            "created": "Produto criado",
+            "confirmDelete": "Excluir produto?",
+            "deleted": "Produto excluído",
+            "activated": "Produto ativado",
+            "deactivated": "Produto desativado",
+            "featuredUpdated": "Produto em destaque atualizado",
+            "statusUpdated": "Status do pedido atualizado",
+            "copied": "Copiado para a área de transferência",
+            "exported": "Pedidos exportados"
+        }
+    },
+    "crosses": {
+        "title": "Gerenciador de Cruzamentos",
+        "subtitle": "projetos genéticos ativos",
+        "stats": {
+            "process": "PROCESSO",
+            "success": "SUCESSO"
+        },
+        "searchPlaceholder": "Buscar por nome ou parentais...",
+        "filters": {
+            "all": "TODAS",
+            "inProcess": "EM PROCESSO",
+            "completed": "CONCLUÍDA",
+            "failed": "FALHA"
+        },
+        "list": {
+            "syncing": "SINCRONIZANDO",
+            "seeds": "SEMENTES",
+            "plants": "PLANTAS",
+            "days": "DIAS",
+            "error": "ERRO"
+        },
+        "empty": "Nenhum projeto nesta categoria",
+        "newCross": "NOVO CRUZAMENTO",
+        "modalAdd": {
+            "title": "Novo Cruzamento",
+            "subtitle": "Inicie um projeto genético",
+            "nameLabel": "Nome do Projeto",
+            "namePlaceholder": "Ex: Dionaea B52 x Red Dragon",
+            "hybridPhoto": "Foto do Híbrido (Opcional)",
+            "captureHybrid": "CAPTURAR HÍBRIDO",
+            "mother": "MÃE",
+            "father": "PAI",
+            "photoPlaceholder": "FOTO",
+            "nameInputPlaceholder": "Nome",
+            "dateLabel": "Data do Cruzamento",
+            "notesLabel": "Notas Bio",
+            "notesPlaceholder": "Detalhes da polinização...",
+            "saveButton": "SALVAR PROJETO",
+            "saving": "SALVANDO..."
+        },
+        "modalDetail": {
+            "tree": "ÁRVORE",
+            "eliteFunction": "Função ELITE",
+            "started": "Iniciado:",
+            "seedsObtained": "SEMENTES",
+            "germinated": "GERMINADAS",
+            "status": "STATUS",
+            "cancel": "CANCELAR",
+            "save": "SALVAR",
+            "editResults": "EDITAR RESULTADOS",
+            "confirmDelete": "Excluir?",
+            "registerElite": "REGISTRAR CULTIVAR ELITE",
+            "noNotes": "Sem notas genéticas disponíveis"
+        },
+        "status": {
+            "inProcess": "Em Processo",
+            "completed": "Concluída",
+            "failed": "Falha"
+        }
+    },
+    "profile": {
+        "title": "Meu Perfil",
+        "activeLicense": "Licença Ativa",
+        "notifications": "Notificações",
+        "notificationsBlocked": "Bloqueadas no navegador",
+        "notificationsActive": "Alertas ativos",
+        "notificationsInactive": "Receba alertas instantâneos",
+        "localTest": "Teste Local",
+        "serverTest": "Teste Servidor",
+        "publicNursery": "Meu Viveiro Público",
+        "reloadApp": "Recarregar App",
+        "reloadProblem": "Corrigir problemas de carregamento",
+        "logout": "Sair",
+        "managePlan": "GERENCIAR MEU PLANO",
+        "plan": "Plano",
+        "language": "Idioma",
+        "selectLanguage": "Selecionar Idioma",
+        "cancel": "Cancelar",
+        "save": "Salvar",
+        "changeLanguage": "Mudar Idioma",
+        "currentLanguage": "Idioma Atual"
+    },
+    "planModal": {
+        "title": "Melhore seu Laboratório",
+        "subtitle": "Escolha o plano ideal para seu cultivo",
+        "monthly": "Mensal",
+        "annual": "Anual",
+        "basic": "Plano Básico",
+        "free": "GRÁTIS",
+        "basicDesc": "Viveiro Online Público e funções essenciais",
+        "currentPlan": "Plano Atual",
+        "downgradeBasic": "Mudar para Básico",
+        "pro": "Plano Pro",
+        "month": "/mês",
+        "year": "/ano",
+        "proFeatures": {
+            "unlimited": "Cultivo Ilimitado (Sem limites)",
+            "nursery": "Viveiro Online (Portfólio Público)",
+            "genealogy": "Genealogia Avançada (Lista)"
+        },
+        "registered": "Inscrito",
+        "processing": "Processando...",
+        "upgradePro": "Melhorar para Pro",
+        "choosePro": "Escolher Pro",
+        "elite": "Plano Elite",
+        "eliteFeatures": {
+            "ai": "IA Carni Bot (Identificação e Diagnóstico)",
+            "shop": "Loja Online Pública Completa",
+            "tree": "Árvore Genealógica Visual (Laboratório)"
+        },
+        "upgradeElite": "Melhorar para Elite",
+        "chooseElite": "Escolher Elite",
+        "maybeLater": "Talvez mais tarde"
+    },
+    "common": {
+        "back": "Voltar",
+        "loading": "Carregando..."
+    }
+}
