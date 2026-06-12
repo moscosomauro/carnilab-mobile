@@ -199,21 +199,6 @@
       "created_at": "2025-12-28T15:23:49.187286+00:00"
     },
     {
-      "id": 18,
-      "nombre": "B52",
-      "especie": "Dionaea",
-      "fecha_adquisicion": "2025-12-28",
-      "origen": "Argentina ",
-      "precio": 0,
-      "estado": "saludable",
-      "ubicacion": "Invernadero ",
-      "notas": "",
-      "imagen": "https://szscgmqkcwlzceyisbpi.supabase.co/storage/v1/object/public/plant-images/KEY-WKO2EF/mjpvyqa1y1hudumiac.jpg",
-      "en_venta": false,
-      "precio_venta": 0,
-      "created_at": "2025-12-28T15:30:18.331956+00:00"
-    },
-    {
       "id": 19,
       "nombre": "Leucophylla ",
       "especie": "Sarracenia ",
