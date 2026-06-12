@@ -1,9 +1,7 @@
-
-
 import React, { lazy, Suspense } from 'react';
 import { HashRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 
 // Lazy loaded screens - reduces initial bundle size significantly
@@ -17,35 +15,16 @@ const CrossesScreen = lazy(() => import('./screens/Crosses'));
 const GenealogyScreen = lazy(() => import('./screens/GenealogyScreen'));
 const BackupScreen = lazy(() => import('./screens/Backup'));
 const AIAssistant = lazy(() => import('./screens/AIAssistant'));
-const LoginScreen = lazy(() => import('./screens/LoginScreen'));
-const AdminKeys = lazy(() => import('./screens/AdminKeys'));
-const AdminPrices = lazy(() => import('./screens/AdminPrices'));
-const AdminDashboard = lazy(() => import('./screens/admin/AdminDashboard'));
-const AdminThemeScreen = lazy(() => import('./screens/admin/AdminThemeScreen'));
-const AdminUsers = lazy(() => import('./screens/admin/AdminUsers'));
-const LandingPage = lazy(() => import('./screens/LandingPage'));
-const PublicGallery = lazy(() => import('./screens/PublicGallery'));
 const ClimateScreen = lazy(() => import('./screens/ClimateScreen'));
-const InboxScreen = lazy(() => import('./screens/InboxScreen'));
-const ChatScreen = lazy(() => import('./screens/ChatScreen'));
 const ProfileScreen = lazy(() => import('./screens/ProfileScreen'));
-const SystemStatus = lazy(() => import('./screens/SystemStatus'));
-const DesignConcept = lazy(() => import('./screens/DesignConcept'));
-// const GeneticCalculatorScreen = lazy(() => import('./screens/GeneticCalculatorScreen')); // Deprecated - replaced by Lab
 const CultivarGeneratorScreen = lazy(() => import('./screens/CultivarGeneratorScreen'));
-const ShopManager = lazy(() => import('./screens/shop/ShopManager'));
-const ShopPublic = lazy(() => import('./screens/shop/ShopPublic'));
 const QRDesignShowcase = lazy(() => import('./screens/QRDesignShowcase').then(m => ({ default: m.QRDesignShowcase })));
-const DiscoveryPrototype = lazy(() => import('./screens/DiscoveryPrototype'));
 const SeedBankScreen = lazy(() => import('./screens/SeedBankScreen'));
 const LabScreen = lazy(() => import('./screens/Lab'));
 
 // Non-lazy components (always needed)
 import { NotificationToast } from './components/NotificationToast';
 import { DesktopLayout } from './components/DesktopLayout';
-import { CarniBotIcon } from './components/CarniBotIcon';
-import { BroadcastProvider } from './context/BroadcastContext';
-import { BroadcastBanner } from './components/BroadcastBanner';
 import { ThemeParticles } from './components/ThemeParticles';
 import { ThemeDecorations } from './components/ThemeDecorations';
 import { DynamicBackground } from './components/DynamicBackground';
@@ -59,8 +38,6 @@ const PageLoader = () => (
     </div>
   </div>
 );
-
-
 
 // Helper for scroll to top on route change
 const ScrollToTop = () => {
@@ -101,7 +78,7 @@ const ErrorToastContainer: React.FC = () => {
         <div className="flex items-start gap-3">
           <div className="text-[24px] mt-0.5">⚠️</div>
           <div className="flex-1">
-            <p className="font-black text-[13px] uppercase tracking-wide mb-1">Error de Sincronización</p>
+            <p className="font-black text-[13px] uppercase tracking-wide mb-1">Error</p>
             <p className="text-[12px] font-medium opacity-95 leading-relaxed">{errorToast}</p>
           </div>
           <button
@@ -116,133 +93,34 @@ const ErrorToastContainer: React.FC = () => {
   );
 };
 
-// Componente para proteger rutas
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
-  if (!user?.isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-  return <>{children}</>;
-};
-
-// Componente para proteger rutas de Admin Web
-const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, isLoadingAuth } = useAuth();
-  if (isLoadingAuth) return <div className="flex h-screen items-center justify-center bg-[#0F172A] text-white">Cargando acceso...</div>;
-
-  if (!user?.isAuthenticated || !user.isAdmin) {
-    return <Navigate to="/" replace />;
-  }
-  return <>{children}</>;
-};
-
-// Componente para proteger por PLAN (Basic < Pro < Elite)
-// Import helpers explicitly if needed or use inline logic since we have access to user.plan
-const PlanRoute: React.FC<{ children: React.ReactNode, requiredPlan: 'pro' | 'elite' }> = ({ children, requiredPlan }) => {
-  const { user } = useAuth();
-  const PLAN_LEVELS = { basic: 0, pro: 1, elite: 2 };
-
-  const userLevel = PLAN_LEVELS[user?.plan || 'basic'];
-  const requiredLevel = PLAN_LEVELS[requiredPlan];
-
-  if (userLevel < requiredLevel) {
-    // Si no tiene nivel, redirigir al dashboard (allí se puede mostrar modal si intentan entrar por menú)
-    // O idealmente mostrar la pantalla de UpSell aquí mismo. Por simplicidad, redirect a Dash.
-    return <Navigate to="/dashboard" replace />;
-  }
-  return <>{children}</>;
-};
-
 const AppRoutes: React.FC = () => {
   return (
     <Suspense fallback={<PageLoader />}>
-    <Routes>
-      {/* Ruta Raíz - Landing Page */}
-      <Route path="/" element={<LandingPage />} />
+      <Routes>
+        {/* La app arranca directo en el Dashboard */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/login" element={<Navigate to="/dashboard" replace />} />
 
-      {/* Ruta Pública - Galería de Vivero (Fase 2) */}
-      <Route path="/vivero/:slug" element={<PublicGallery />} />
-      <Route path="/shop/:slug" element={<ShopPublic />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/add" element={<AddPlant />} />
+        <Route path="/plants" element={<PlantList />} />
+        <Route path="/plant/:id" element={<PlantDetails />} />
+        <Route path="/alerts" element={<Alerts />} />
+        <Route path="/diary" element={<Diary />} />
+        <Route path="/crosses" element={<CrossesScreen />} />
+        <Route path="/seed-bank" element={<SeedBankScreen />} />
+        <Route path="/backup" element={<BackupScreen />} />
+        <Route path="/profile" element={<ProfileScreen />} />
+        <Route path="/ai" element={<AIAssistant />} />
+        <Route path="/climate" element={<ClimateScreen />} />
+        <Route path="/cultivar-gen" element={<CultivarGeneratorScreen />} />
+        <Route path="/lab" element={<LabScreen />} />
+        <Route path="/genealogy/:id" element={<GenealogyScreen />} />
+        <Route path="/qr-design" element={<QRDesignShowcase />} />
 
-      {/* Login */}
-      <Route path="/login" element={<LoginScreen />} />
-
-      {/* Rutas App Móvil (Protegidas) */}
-      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/add" element={<ProtectedRoute><AddPlant /></ProtectedRoute>} />
-      <Route path="/plants" element={<ProtectedRoute><PlantList /></ProtectedRoute>} />
-      <Route path="/plant/:id" element={<ProtectedRoute><PlantDetails /></ProtectedRoute>} />
-
-      {/* BASIC Routes */}
-      <Route path="/alerts" element={<ProtectedRoute><Alerts /></ProtectedRoute>} />
-      <Route path="/diary" element={<ProtectedRoute><Diary /></ProtectedRoute>} />
-      <Route path="/crosses" element={<ProtectedRoute><CrossesScreen /></ProtectedRoute>} />
-      <Route path="/seed-bank" element={<ProtectedRoute><SeedBankScreen /></ProtectedRoute>} />
-      <Route path="/backup" element={<ProtectedRoute><BackupScreen /></ProtectedRoute>} />
-      <Route path="/profile" element={<ProtectedRoute><ProfileScreen /></ProtectedRoute>} />
-      <Route path="/system-status" element={<ProtectedRoute><SystemStatus /></ProtectedRoute>} />
-
-      {/* PRO Routes */}
-      <Route path="/ai" element={
-        <ProtectedRoute>
-          <PlanRoute requiredPlan="elite"><AIAssistant /></PlanRoute>
-        </ProtectedRoute>
-      } />
-      <Route path="/climate" element={
-        <ProtectedRoute>
-          <PlanRoute requiredPlan="pro"><ClimateScreen /></PlanRoute>
-        </ProtectedRoute>
-      } />
-      {/* /calculator replaced by /lab - GeneticCalculatorScreen deprecated */}
-      <Route path="/cultivar-gen" element={
-        <ProtectedRoute>
-          <PlanRoute requiredPlan="pro"><CultivarGeneratorScreen /></PlanRoute>
-        </ProtectedRoute>
-      } />
-      <Route path="/lab" element={
-        <ProtectedRoute>
-          <PlanRoute requiredPlan="pro"><LabScreen /></PlanRoute>
-        </ProtectedRoute>
-      } />
-      <Route path="/shop-manager" element={
-        <ProtectedRoute>
-          <PlanRoute requiredPlan="elite"><ShopManager /></PlanRoute>
-        </ProtectedRoute>
-      } />
-
-      {/* ELITE Routes */}
-      <Route path="/inbox" element={
-        <ProtectedRoute>
-          <PlanRoute requiredPlan="elite"><InboxScreen /></PlanRoute>
-        </ProtectedRoute>
-      } />
-      <Route path="/chat/:conversationId" element={
-        <ProtectedRoute>
-          <PlanRoute requiredPlan="elite"><ChatScreen /></PlanRoute>
-        </ProtectedRoute>
-      } />
-      <Route path="/genealogy/:id" element={
-        <ProtectedRoute>
-          <PlanRoute requiredPlan="elite"><GenealogyScreen /></PlanRoute>
-        </ProtectedRoute>
-      } />
-      <Route path="/qr-design" element={
-        <ProtectedRoute>
-          <PlanRoute requiredPlan="elite"><QRDesignShowcase /></PlanRoute>
-        </ProtectedRoute>
-      } />
-
-      {/* Ruta Admin Móvil (Legacy/Rápido) */}
-      <Route path="/admin-keys" element={<ProtectedRoute><AdminKeys /></ProtectedRoute>} />
-
-      {/* Rutas Admin Web (Escritorio) - MOVED TO TOP LEVEL */}
-      {/* <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} /> */}
-      {/* <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} /> */}
-
-      {/* RUTA DE DISEÑO (SOLO LOCAL) */}
-      <Route path="/design" element={<DesignConcept />} />
-      <Route path="/discovery" element={<DiscoveryPrototype />} />
-    </Routes>
+        {/* Cualquier ruta desconocida vuelve al dashboard */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
     </Suspense>
   );
 };
@@ -252,9 +130,7 @@ const App: React.FC = () => {
     <AuthProvider>
       <ThemeProvider>
         <AppProvider>
-          <BroadcastProvider>
-            <AppContent />
-          </BroadcastProvider>
+          <AppContent />
         </AppProvider>
       </ThemeProvider>
     </AuthProvider>
@@ -262,27 +138,9 @@ const App: React.FC = () => {
 };
 
 const AppContent: React.FC = () => {
-  const { isLoadingAuth } = useAuth();
-
-  if (isLoadingAuth) {
-    return (
-      <div className="min-h-screen w-full bg-[#12122e] flex flex-col items-center justify-center p-6 font-sans">
-        <div className="relative w-24 h-24 mb-6">
-          <div className="absolute inset-0 border-4 border-teal-500/20 rounded-full"></div>
-          <div className="absolute inset-0 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <CarniBotIcon className="w-10 h-10 text-teal-400 opacity-60 animate-pulse" />
-          </div>
-        </div>
-        <p className="text-teal-400/40 text-[10px] uppercase tracking-[0.4em] font-black animate-pulse">Initializing Lab</p>
-      </div>
-    );
-  }
-
   return (
     <HashRouter>
       <ScrollToTop />
-      <BroadcastBanner />
       <NotificationContainer />
       <ErrorToastContainer />
 
@@ -296,23 +154,9 @@ const AppContent: React.FC = () => {
       <ThemeDecorations />
 
       <div className="min-h-screen w-full bg-transparent text-slate-100 font-sans selection:bg-teal-500/30 selection:text-white">
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            {/* Admin Routes - Standalone Layout */}
-            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-            <Route path="/admin/keys" element={<AdminRoute><AdminKeys /></AdminRoute>} />
-            <Route path="/admin/prices" element={<AdminRoute><AdminPrices /></AdminRoute>} />
-            <Route path="/admin/theme" element={<AdminRoute><AdminThemeScreen /></AdminRoute>} />
-            <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
-
-            {/* Main App Routes - Wrapped in DesktopLayout */}
-            <Route path="/*" element={
-              <DesktopLayout>
-                <AppRoutes />
-              </DesktopLayout>
-            } />
-          </Routes>
-        </Suspense>
+        <DesktopLayout>
+          <AppRoutes />
+        </DesktopLayout>
       </div>
     </HashRouter>
   );

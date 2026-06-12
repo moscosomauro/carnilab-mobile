@@ -374,7 +374,7 @@ const CrossesScreen: React.FC = () => {
                   alert('✅ Semillas enviadas al Banco Exitosamente');
                   navigate('/seed-bank');
                 } else {
-                  alert('❌ Error al guardar las semillas en Supabase. Revisar consola.');
+                  alert('❌ Error al guardar las semillas. Revisar consola.');
                 }
               }
             }, 500); // Pequeño delay para que React termine de actualizar el DOM detrás
@@ -402,7 +402,7 @@ const CrossesScreen: React.FC = () => {
           alert('✅ Semillas enviadas al Banco Exitosamente');
           navigate('/seed-bank');
         } else {
-          alert('❌ Error al guardar las semillas en Supabase. Revisar consola para más detalles.');
+          alert('❌ Error al guardar las semillas. Revisar consola para más detalles.');
         }
     }
   };

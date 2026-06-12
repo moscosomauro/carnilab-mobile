@@ -395,9 +395,9 @@ const PlantList: React.FC = () => {
             <AssetIcon name="icon-home" size={24} className="opacity-40" />
             <span className="text-[9px] font-bold uppercase tracking-widest text-[#8E877F]">Home</span>
           </button>
-          <button onClick={() => navigate('/discovery')} className="flex flex-col items-center gap-1.5 text-[#8E877F] active:scale-95 transition-all">
-            <AssetIcon name="icon-vivero" size={24} className="opacity-40" />
-            <span className="text-[9px] font-bold uppercase tracking-widest text-[#8E877F]">Mapa</span>
+          <button onClick={() => navigate('/diary')} className="flex flex-col items-center gap-1.5 text-[#8E877F] active:scale-95 transition-all">
+            <AssetIcon name="icon-diary" size={24} className="opacity-40" />
+            <span className="text-[9px] font-bold uppercase tracking-widest text-[#8E877F]">Diario</span>
           </button>
           <button onClick={() => navigate('/plants')} className="flex flex-col items-center gap-1.5 text-[#4A5D4F] active:scale-95 transition-all relative">
             <div className="absolute -top-12 w-1.5 h-1.5 rounded-full bg-[#4A5D4F]" />

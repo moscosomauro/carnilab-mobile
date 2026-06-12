@@ -1,14 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useApp, withTimeout } from '../context/AppContext';
+import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { hasAccess } from '../utils/planHelpers';
 import { Plant } from '../types';
-import { compressImage, uploadImage, isOfflineImage } from '../utils/imageHelpers';
-import { supabase } from '../supabaseClient';
+import { compressImage, uploadImage } from '../utils/imageHelpers';
 import { Icon } from '../components/Icon';
-import { PlanComparison } from '../components/PlanComparison';
 import { PlantSchema, validateData } from '../utils/validationSchemas';
 
 import { SpeciesIcon } from '../components/SpeciesIcon';
@@ -102,7 +99,6 @@ const AddPlant: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [savingStep, setSavingStep] = useState(''); // Para mostrar en qué paso estamos
-  const [showPlans, setShowPlans] = useState(false);
   const [isCustomSpecies, setIsCustomSpecies] = useState(false);
 
   // Get unique custom species from user's plants
@@ -139,30 +135,16 @@ const AddPlant: React.FC = () => {
         initialImages.push({ id: 'main', url: editingPlant.imagen, isNew: false });
       }
 
-      // 2. Load extra images if they exist (need to fetch if not passed in location state)
-      // For now, we assume location.state might lack full relations, so we might need a fetch?
-      // Optimization: We will fetch linked images if we are in editing mode
-      const fetchImages = async () => {
-        const { data } = await supabase.from('plant_images').select('*').eq('plant_id', editingPlant.id).order('display_order');
-        if (data && data.length > 0) {
-          const mapped = data.map(img => ({ id: img.id, url: img.image_url, isNew: false }));
-          // Deduplicate main image if it was also in plant_images table? 
-          // Logic: If we rely on plant_images for V2, we might just load all from there.
-          // But for hybrid transition, let's just use the fetched ones if available, otherwise fallback to main.
-          setImages(mapped);
-        } else if (editingPlant.imagen) {
-          // Only legacy image exists
-          setImages([{ id: 'legacy', url: editingPlant.imagen, isNew: false }]);
-        }
+      // 2. Galería guardada en el propio registro de la planta
+      if (editingPlant.images && editingPlant.images.length > 0) {
+        setImages(editingPlant.images.map(img => ({ id: String(img.id), url: img.image_url, isNew: false })));
+      } else if (editingPlant.imagen) {
+        setImages([{ id: 'legacy', url: editingPlant.imagen, isNew: false }]);
       }
-      fetchImages();
-
     }
   }, [editingPlant]);
 
-  const PLANT_LIMIT_BASIC = 50;
-  const isLimitReached = !isEditing && user?.plan === 'basic' && plants.length >= PLANT_LIMIT_BASIC;
-  const canSell = hasAccess(user?.plan, 'elite');
+  const canSell = true; // App local: sin restricciones de plan
 
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -203,11 +185,6 @@ const AddPlant: React.FC = () => {
   const handleSave = async () => {
     console.log('[AddPlant] handleSave iniciado');
 
-    if (!isEditing && isLimitReached) {
-      console.log('[AddPlant] Limite de plantas alcanzado');
-      setShowPlans(true);
-      return;
-    }
     if (isSaving) {
       console.log('[AddPlant] Ya se esta guardando, ignorando');
       return;
@@ -242,32 +219,24 @@ const AddPlant: React.FC = () => {
         return;
       }
 
-      console.log('[AddPlant] Validacion OK, subiendo imagenes...', images.length, 'imagenes');
+      console.log('[AddPlant] Validacion OK, procesando imagenes...', images.length, 'imagenes');
 
-      // 1. Upload new images
+      // 1. Procesar imágenes nuevas (compresión local, sin nube)
       const finalImagesDetails: { url: string }[] = [];
       const newImagesCount = images.filter(img => img.isNew).length;
-      let offlineCount = 0; // Contador de imágenes guardadas offline
 
       for (let i = 0; i < images.length; i++) {
         const img = images[i];
-        console.log(`[AddPlant] Procesando imagen ${i + 1}/${images.length}:`, img.isNew ? 'NUEVA' : 'EXISTENTE');
 
         if (img.isNew && img.file && user?.key) {
           try {
-            setSavingStep(`Subiendo foto ${i + 1}/${newImagesCount}...`);
-            console.log(`[AddPlant] Subiendo imagen ${i + 1}...`);
-            const uploadedUrl = await uploadImage(img.file, user.key);
-            console.log(`[AddPlant] Imagen ${i + 1} subida:`, uploadedUrl ? 'OK' : 'FALLO');
-            if (uploadedUrl) {
-              finalImagesDetails.push({ url: uploadedUrl });
-              // Verificar si se guardó offline (es base64)
-              if (isOfflineImage(uploadedUrl)) {
-                offlineCount++;
-              }
+            setSavingStep(`Procesando foto ${i + 1}/${newImagesCount}...`);
+            const processedUrl = await uploadImage(img.file, user.key);
+            if (processedUrl) {
+              finalImagesDetails.push({ url: processedUrl });
             }
           } catch (uploadErr) {
-            console.error(`[AddPlant] Error subiendo imagen ${i + 1}:`, uploadErr);
+            console.error(`[AddPlant] Error procesando imagen ${i + 1}:`, uploadErr);
             // Continuamos con las demas imagenes
           }
         } else {
@@ -275,24 +244,18 @@ const AddPlant: React.FC = () => {
         }
       }
 
-      // Informar si hay imágenes guardadas offline
-      if (offlineCount > 0) {
-        console.log(`[AddPlant] ${offlineCount} imagen(es) guardadas offline para sync posterior`);
-      }
+      // La primera imagen es la principal; la galería completa va en el registro
+      const mainImageUrl = finalImagesDetails[0]?.url || null;
 
-      // Para la imagen principal, solo usar URL de Supabase (no base64 offline)
-      // Las imágenes offline se sincronizan después
-      const onlineMainImage = finalImagesDetails.find(img => !isOfflineImage(img.url));
-      const mainImageUrl = onlineMainImage?.url || null;
-
-      console.log('[AddPlant] Imagenes procesadas:', finalImagesDetails.length,
-        'Online:', finalImagesDetails.filter(img => !isOfflineImage(img.url)).length,
-        'Offline:', offlineCount);
-
-      // ✅ Usar datos validados - NO guardar base64 en la BD (es muy grande)
       const plantData = {
         ...validation.data!,
-        imagen: mainImageUrl, // Solo URLs de Supabase, no base64
+        imagen: mainImageUrl,
+        images: finalImagesDetails.map((img, index) => ({
+          id: `img_${Date.now()}_${index}`,
+          plant_id: isEditing && editingPlant ? editingPlant.id : 0,
+          image_url: img.url,
+          display_order: index,
+        })),
       };
 
       let success = false;
@@ -316,76 +279,14 @@ const AddPlant: React.FC = () => {
 
       console.log('[AddPlant] Planta guardada. success:', success, 'targetPlantId:', targetPlantId);
 
-      // 2. Sync `plant_images` table (con manejo de errores)
-      if (success && targetPlantId && user?.key) {
-        setSavingStep('Sincronizando...');
-        try {
-          // Strategy: Replace all (Delete all for this plant, insert all current)
-          const { error: deleteError } = await withTimeout(
-            supabase
-              .from('plant_images')
-              .delete()
-              .eq('plant_id', targetPlantId),
-            10000
-          ) as any;
-
-          if (deleteError) {
-            console.warn('[AddPlant] Error borrando plant_images (puede que la tabla no exista):', deleteError);
-            // Continuamos de todas formas - la planta ya se guardo
-          }
-
-          // Solo insertar imágenes online (URLs de Supabase), no base64
-          const onlineImages = finalImagesDetails.filter(img => !isOfflineImage(img.url));
-
-          if (onlineImages.length > 0) {
-            const recordsToInsert = onlineImages.map((img, index) => ({
-              plant_id: targetPlantId,
-              image_url: img.url,
-              display_order: index,
-              owner_key: user.key
-            }));
-
-            const { error: insertError } = await withTimeout(
-              supabase
-                .from('plant_images')
-                .insert(recordsToInsert),
-              10000
-            ) as any;
-
-            if (insertError) {
-              console.warn('[AddPlant] Error insertando plant_images:', insertError);
-              // Continuamos - la planta ya se guardo con la imagen principal
-            }
-          }
-        } catch (imgError) {
-          console.warn('[AddPlant] Error en sync de plant_images:', imgError);
-          // No bloqueamos - la planta ya esta guardada
-        }
-
-        setShowSuccess(true);
-
-        // Si hay imágenes offline, mostrar mensaje informativo
-        if (offlineCount > 0) {
-          setTimeout(() => {
-            alert(`✅ Planta guardada!\n\n📶 ${offlineCount} foto(s) se sincronizarán cuando mejore la conexión.`);
-          }, 500);
-        }
-
-        setTimeout(() => {
-          setShowSuccess(false);
-          navigate(-1);
-        }, offlineCount > 0 ? 2500 : 1500);
-      } else if (!success) {
-        // Si fallo el guardado de la planta
-        alert(t('addPlant.errorSaving'));
-      } else {
-        // success pero sin targetPlantId o user.key - raro pero manejamos
-        console.warn('[AddPlant] Guardado OK pero sin targetPlantId o user.key');
+      if (success) {
         setShowSuccess(true);
         setTimeout(() => {
           setShowSuccess(false);
           navigate(-1);
         }, 1500);
+      } else {
+        alert(t('addPlant.errorSaving'));
       }
 
     } catch (e: any) {
@@ -751,11 +652,6 @@ const AddPlant: React.FC = () => {
               </svg>
             </div>
           </div>
-        )}
-
-        {/* MODALS */}
-        {showPlans && user && (
-          <PlanComparison currentPlan={user.plan} onClose={() => setShowPlans(false)} />
         )}
 
       </div>

@@ -1,13 +1,10 @@
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useApp } from "../context/AppContext";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
-import { hasAccess } from "../utils/planHelpers";
-import { PlanComparison } from "../components/PlanComparison";
-import { Icon } from "../components/Icon";
 import { Pencil } from "lucide-react";
 
 // ---------- UI helpers ----------
@@ -29,48 +26,16 @@ type MenuItem = {
 const Dashboard = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { plants, alerts, crosses, inbox } = useApp();
-  const { user, logout, updateUserLabel, subscribeToPush } = useAuth();
+  const { plants, alerts, crosses } = useApp();
+  const { user, updateUserLabel } = useAuth();
   const { currentLogo } = useTheme();
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [newProfileName, setNewProfileName] = useState(user?.label || "");
-  const [showPlans, setShowPlans] = useState(false);
-
-
-  // Get additional data for badges
-  useEffect(() => {
-    // Attempt to subscribe to push notifications automatically
-    if (user) {
-      subscribeToPush().catch(err => console.error("Push subscribe failed", err));
-    }
-  }, [user, subscribeToPush]);
-
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-
-  React.useEffect(() => {
-    const handleStatusChange = () => {
-      setIsOnline(navigator.onLine);
-    };
-
-    window.addEventListener('online', handleStatusChange);
-    window.addEventListener('offline', handleStatusChange);
-
-    return () => {
-      window.removeEventListener('online', handleStatusChange);
-      window.removeEventListener('offline', handleStatusChange);
-    };
-  }, []);
 
   const pendingAlerts = alerts.filter((a) => !a.completada).length;
-  const unreadMessagesCount = inbox.filter((m) => !m.is_read).length;
 
   const menuItems: MenuItem[] = useMemo(() => [
-
-    { title: t('dashboard.menu.globalNetwork'), icon: <AssetIcon name="icon-vivero" size={48} />, bg: "var(--color-brand-primary)", path: "/discovery", plan: "basic" as const },
-    { title: t('dashboard.menu.myNursery'), icon: <AssetIcon name="icon-vivero" size={48} />, bg: "var(--color-brand-primary)", path: `/vivero/${user?.slug || 'demo'}`, plan: "basic" },
-    { title: t('dashboard.menu.shopBeta'), icon: <AssetIcon name="icon-shop" size={48} />, bg: "var(--color-brand-secondary)", path: "/shop-manager", plan: "elite" },
-    { title: t('layout.menu.messages'), icon: <AssetIcon name="icon-mensajes" size={48} />, bg: "var(--color-brand-accent)", path: "/inbox", plan: "elite", badge: unreadMessagesCount },
     { title: "CarniBot", icon: <AssetIcon name="icon-bot" size={48} />, bg: "var(--color-brand-accent)", path: "/ai", plan: "elite" },
     { title: t('layout.menu.addPlant'), icon: <AssetIcon name="icon-add" size={48} />, bg: "var(--color-brand-primary)", path: "/add", plan: "basic" },
     { title: t('layout.menu.myPlants'), icon: <AssetIcon name="icon-plants" size={48} />, bg: "var(--color-brand-primary)", path: "/plants", plan: "basic" },
@@ -81,21 +46,11 @@ const Dashboard = () => {
     { title: t('dashboard.menu.alerts'), icon: <AssetIcon name="icon-alerts" size={48} />, bg: "var(--color-brand-accent)", path: "/alerts", plan: "basic", badge: pendingAlerts },
     { title: t('dashboard.menu.backup'), icon: <AssetIcon name="icon-backup" size={48} />, bg: "var(--color-brand-secondary)", path: "/backup", plan: "basic" },
     { title: t('dashboard.menu.calculator'), icon: <AssetIcon name="icon-genlab" size={48} />, bg: "var(--color-brand-accent)", path: "/lab", plan: "pro" },
-    ...(user?.isAdmin ? [{
-      title: t('dashboard.menu.priceControl'),
-      icon: <Icon name="payments" className="text-2xl text-emerald-800" />,
-      bg: "var(--color-brand-primary)", // Green to match administrative/safe
-      path: "/admin/prices",
-      plan: "basic" as const // Plan type hack since admins bypass anyway
-    }] : []),
-  ], [unreadMessagesCount, pendingAlerts, user, t]);
+  ], [pendingAlerts, user, t]);
 
-  const handleNavigation = (path: string, plan: string) => {
-    if (hasAccess(user?.plan, plan as any)) {
-      navigate(path);
-    } else {
-      setShowPlans(true);
-    }
+  // App local: todas las funciones están desbloqueadas
+  const handleNavigation = (path: string, _plan: string) => {
+    navigate(path);
   };
 
   const handleSaveProfileName = async () => {
@@ -116,19 +71,6 @@ const Dashboard = () => {
             {new Date().toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long' })}
           </div>
 
-          {/* Connection Status Icon */}
-          <div className={`transition-opacity duration-300 ${isOnline ? 'text-[#6B8E23]' : 'text-[#FF4D4D]'}`}>
-            {isOnline ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
-              </svg>
-            ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22.61 7.21l-2.08-2.09a2 2 0 0 0-2.83 0L4.79 17.9a2 2 0 0 0 0 2.83l2.08 2.09a2 2 0 0 0 2.83 0L22.61 10.04a2 2 0 0 0 0-2.83z"></path>
-                <line x1="2" y1="2" x2="22" y2="22"></line>
-              </svg>
-            )}
-          </div>
         </div>
 
         {/* LOGO */}
@@ -180,11 +122,6 @@ const Dashboard = () => {
           <button onClick={() => handleNavigation('/lab', 'pro')} className="flex flex-col items-center gap-2">
             <div className="w-20 h-20 lg:w-28 lg:h-28 rounded-2xl bg-brand-surface flex items-center justify-center shadow-sm border border-brand-light/15 overflow-hidden relative">
               <AssetIcon name="icon-genlab" size={80} className="lg:scale-125" />
-              {!hasAccess(user?.plan, 'pro') && (
-                <div className="absolute inset-0 bg-brand-surface/60 flex items-center justify-center">
-                  <Icon name="lock" className="text-brand-dark/50" />
-                </div>
-              )}
             </div>
             <span className="text-[10px] lg:text-xs font-bold text-brand-dark/80 leading-tight text-center">{t('dashboard.genLab')}</span>
           </button>
@@ -192,11 +129,6 @@ const Dashboard = () => {
           <button onClick={() => handleNavigation('/qr-design', 'elite')} className="flex flex-col items-center gap-2">
             <div className="w-20 h-20 lg:w-28 lg:h-28 rounded-2xl bg-brand-surface flex items-center justify-center shadow-sm border border-brand-light/15 overflow-hidden relative">
               <AssetIcon name="icon-scanner" size={80} className="lg:scale-125" />
-              {!hasAccess(user?.plan, 'elite') && (
-                <div className="absolute inset-0 bg-brand-surface/60 flex items-center justify-center">
-                  <Icon name="lock" className="text-brand-dark/50" />
-                </div>
-              )}
             </div>
             <span className="text-[10px] lg:text-xs font-bold text-brand-dark/80 leading-tight text-center">{t('dashboard.scanner')}</span>
           </button>
@@ -258,21 +190,6 @@ const Dashboard = () => {
             </button>
           ))}
 
-          {/* LOGOUT */}
-          <button
-            onClick={() => logout()}
-            className="h-14 flex items-center px-2 bg-[#C86A67] text-white
-                                   shadow-lg border border-white/20 active:scale-[0.985] transition-transform lg:hidden"
-            style={{ borderRadius: "999px" }}
-          >
-            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center ml-1 border border-white/10 shadow-inner">
-              <AssetIcon name="icon-logout" size={24} />
-            </div>
-            <span className="flex-1 text-left pl-4 font-semibold text-[15px] tracking-wide">
-              {t('layout.logout')}
-            </span>
-            <span className="mr-4 opacity-30 text-lg">›</span>
-          </button>
         </div>
       </div>
 
@@ -281,8 +198,8 @@ const Dashboard = () => {
                             border-t border-brand-light/20 px-10 py-5 flex justify-between z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] lg:hidden">
         {[
           { l: t('dashboard.bottomNav.home'), ic: <AssetIcon name="icon-home" size={24} />, act: true, path: "/dashboard" },
-          { l: t('dashboard.bottomNav.map'), ic: <AssetIcon name="icon-vivero" size={24} />, act: false, path: "/discovery" },
-          { l: t('dashboard.bottomNav.messages'), ic: <AssetIcon name="icon-mensajes" size={24} />, act: false, path: "/inbox" },
+          { l: t('layout.menu.myPlants'), ic: <AssetIcon name="icon-plants" size={24} />, act: false, path: "/plants" },
+          { l: t('layout.menu.diary'), ic: <AssetIcon name="icon-diary" size={24} />, act: false, path: "/diary" },
           { l: t('dashboard.bottomNav.profile'), ic: <AssetIcon name="icon-profile" size={24} />, act: false, path: "/profile" },
         ].map((t, i) => (
           <div
@@ -299,10 +216,6 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* MODALS */}
-      {showPlans && user && (
-        <PlanComparison currentPlan={user.plan} onClose={() => setShowPlans(false)} />
-      )}
 
 
       {isEditingProfile && (

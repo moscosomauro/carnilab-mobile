@@ -213,56 +213,111 @@ export const generateGeneticScenarios = async (
     }
 };
 
-// ✅ Función para generar imagen usando Supabase Edge Function (Stability AI Proxy)
+// ✅ Generación de imagen llamando directo a Stability AI (sin Supabase)
 export const generateScenarioImage = async (imagePrompt: string): Promise<string> => {
     try {
-        console.log('🎨 Generating image via Supabase Edge Function:', imagePrompt);
-
-        // Get Supabase URL from environment
-        const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-        const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-        if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-            throw new Error('Supabase configuration missing');
+        if (!STABILITY_API_KEY) {
+            console.warn('⚠️ STABILITY_API_KEY no configurado; se omite la generación de imagen.');
+            return '';
         }
 
-        // Call Supabase Edge Function
-        const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-image`, {
+        console.log('🎨 Generating image via Stability AI:', imagePrompt);
+
+        const formData = new FormData();
+        formData.append('prompt', imagePrompt);
+        formData.append('output_format', 'jpeg');
+        formData.append('aspect_ratio', '1:1');
+
+        const response = await fetch('https://api.stability.ai/v2beta/stable-image/generate/core', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'Authorization': `Bearer ${STABILITY_API_KEY}`,
+                'Accept': 'application/json',
             },
-            body: JSON.stringify({
-                prompt: imagePrompt
-            })
+            body: formData
         });
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(`Edge Function error: ${response.status} - ${JSON.stringify(errorData)}`);
+            const errorData = await response.text().catch(() => '');
+            throw new Error(`Stability API error: ${response.status} - ${errorData}`);
         }
 
         const data = await response.json();
-
-        if (!data.success || !data.image) {
-            throw new Error(data.error || 'No image data returned');
+        if (!data.image) {
+            throw new Error('No image data returned');
         }
 
-        console.log('✅ Image generated successfully via Edge Function ($0.004)');
-        return data.image;
+        console.log('✅ Image generated successfully via Stability AI');
+        return `data:image/jpeg;base64,${data.image}`;
 
     } catch (error: any) {
-        console.error("❌ Image Generation Error:", error);
-
-        // Log más detallado del error
-        if (error.message) {
-            console.error("Error Message:", error.message);
-        }
-
+        console.error("❌ Image Generation Error:", error?.message || error);
         // Retornar string vacío en caso de error para mostrar placeholder
         return '';
     }
+};
+
+// ✅ Análisis genético/fenotípico de progenie (antes Edge Function con Claude)
+const ANALYSIS_SYSTEM_PROMPT = `Eres un experto botánico especializado en plantas carnívoras, específicamente en genética y fenotipado de Dionaea muscipula (Venus Flytrap).
+
+Analiza la fotografía y responde EXCLUSIVAMENTE en formato JSON válido con esta estructura exacta:
+
+{
+  "coloration": { "dominant": "red" | "green" | "mixed", "percentage": <0-100>, "description": "<patrón de coloración>" },
+  "trap_size": { "category": "miniature" | "small" | "medium" | "large" | "giant", "estimated_cm": <número> },
+  "teeth_shape": { "type": "short" | "medium" | "long" | "fused", "description": "<dientes/cilios>" },
+  "vigor": { "level": "low" | "medium" | "high", "score": <1-10> },
+  "anthocyanins": { "present": true | false, "intensity": "none" | "light" | "moderate" | "strong" },
+  "growth_pattern": { "type": "upright" | "prostrate" | "rosette", "description": "<patrón>" },
+  "traits": ["<rasgo 1>", "<rasgo 2>"],
+  "raw_analysis": "<análisis en texto libre, máximo 3 párrafos>",
+  "confidence": <0.0-1.0>
+}
+
+REGLAS: Sé preciso basándote SOLO en lo visible. Los "traits" son características heredables notables. NUNCA inventes datos no visibles.`;
+
+export const analyzeCrossImage = async (
+    imageBase64: string,
+    crossName?: string | null,
+    parentInfo?: string | null
+): Promise<any> => {
+    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+
+    let contextPrompt = "Analiza esta planta carnívora y extrae toda la información fenotípica visible.";
+    if (crossName || parentInfo) {
+        contextPrompt = `Analiza esta planta carnívora que es PROGENIE de una cruza.
+${crossName ? `Nombre de la cruza: ${crossName}` : ''}
+${parentInfo ? `Información de parentales: ${parentInfo}` : ''}
+Evalúa qué rasgos podrían haberse heredado de los parentales y cuáles son únicos de este espécimen.`;
+    }
+
+    const base64Data = imageBase64.includes(',') ? imageBase64.split(',')[1] : imageBase64;
+
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.0-flash',
+        contents: [
+            { inlineData: { mimeType: 'image/jpeg', data: base64Data } },
+            { text: `${ANALYSIS_SYSTEM_PROMPT}\n\n${contextPrompt}` }
+        ]
+    });
+
+    const text = response.text ?? '{}';
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+    }
+    // Fallback si el modelo no devolvió JSON
+    return {
+        coloration: { dominant: "mixed", percentage: 50, description: "No se pudo analizar automáticamente" },
+        trap_size: { category: "medium", estimated_cm: 2 },
+        teeth_shape: { type: "medium", description: "No se pudo analizar automáticamente" },
+        vigor: { level: "medium", score: 5 },
+        anthocyanins: { present: false, intensity: "none" },
+        growth_pattern: { type: "rosette", description: "No se pudo analizar automáticamente" },
+        traits: [],
+        raw_analysis: text,
+        confidence: 0.3
+    };
 };
 
 // Helper function to convert File to Base64

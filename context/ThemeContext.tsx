@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '../supabaseClient';
 
 type Theme = 'default' | 'christmas' | 'halloween' | 'spring' | 'summer' | 'autumn' | 'winter' | 'neon';
 
@@ -13,6 +12,8 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+const THEME_STORAGE_KEY = 'carnilab_theme';
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [currentTheme, setCurrentTheme] = useState<Theme>('default');
@@ -34,63 +35,15 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const toggleDarkMode = () => setIsDarkMode(prev => !prev);
 
-    // Load initial theme and subscribe to changes
+    // Cargar tema guardado localmente al iniciar
     useEffect(() => {
-        const fetchTheme = async () => {
-            try {
-                const { data } = await supabase
-                    .from('global_settings')
-                    .select('value')
-                    .eq('key', 'theme')
-                    .single();
-
-                if (data && data.value) {
-                    console.log("Initial Theme Data:", data.value);
-                    // Handle if value is wrapped in quotes or is a plain string
-                    const rawValue = typeof data.value === 'string' ? data.value : JSON.stringify(data.value);
-                    const themeValue = rawValue.replace(/['"]+/g, '') as Theme;
-                    applyTheme(themeValue);
-                }
-            } catch (e) {
-                console.error("Error fetching initial theme:", e);
-            }
-        };
-
-        fetchTheme();
-
-        const channel = supabase
-            .channel('global_theme_updates') // Unique channel name
-            .on(
-                'postgres_changes',
-                {
-                    event: '*', // Listen to INSERT and UPDATE
-                    schema: 'public',
-                    table: 'global_settings',
-                    // Removed filter to ensure we catch ALL events for debugging
-                },
-                (payload) => {
-                    console.log('REALTIME EVENT RECEIVED:', payload);
-
-                    const newData = payload.new as any;
-                    if (newData && newData.key === 'theme' && newData.value) {
-                        const rawValue = typeof newData.value === 'string' ? newData.value : JSON.stringify(newData.value);
-                        const themeValue = rawValue.replace(/['"]+/g, '') as Theme;
-                        console.log("Applying Realtime Theme:", themeValue);
-                        applyTheme(themeValue);
-                    }
-                }
-            )
-            .subscribe((status) => {
-                console.log("Realtime Subscription Status:", status);
-            });
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
+        const saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
+        if (saved) applyTheme(saved);
     }, []);
 
     const applyTheme = (theme: Theme) => {
         setCurrentTheme(theme);
+        localStorage.setItem(THEME_STORAGE_KEY, theme);
 
         // Set Logo based on theme
         let logoPath = '/brand-logo.png';
@@ -112,18 +65,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
     };
 
-    // Function to update global theme (Admin only usually)
+    // El tema ahora es 100% local (antes lo definía un admin en la nube)
     const updateGlobalTheme = async (theme: Theme) => {
-        // Optimistic update
         applyTheme(theme);
-
-        // Use RPC function to bypass RLS issues
-        const { error } = await supabase.rpc('update_global_theme', { theme_name: theme });
-
-        if (error) {
-            console.error('Error updating theme:', error);
-            // Revert or show notification if needed
-        }
     };
 
     return (

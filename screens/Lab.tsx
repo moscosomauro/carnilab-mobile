@@ -5,8 +5,8 @@ import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { Cross, CrossAnalysis, GeneticAnalysisResult } from '../types';
 import { compressImage } from '../utils/imageHelpers';
+import { analyzeCrossImage } from '../utils/geminiHelpers';
 import { motion, AnimatePresence } from 'framer-motion';
-import { supabase } from '../supabaseClient';
 
 // --- ICONOS SVG ---
 const IconBack = () => (
@@ -142,59 +142,34 @@ const LabScreen: React.FC = () => {
     setError(null);
 
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-
-      if (!token) {
-        throw new Error('No hay sesión activa');
-      }
-
       // Construir info de parentales si hay cruza seleccionada
       let parentInfo = '';
       if (selectedCross) {
         parentInfo = `Madre: ${selectedCross.madre_nombre} (${selectedCross.madre_especie}), Padre: ${selectedCross.padre_nombre} (${selectedCross.padre_especie})`;
       }
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-cross`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            image_base64: selectedImage,
-            cross_id: selectedCross?.id || null,
-            cross_name: selectedCross?.nombre || null,
-            parent_info: parentInfo || null,
-          }),
-        }
+      // Análisis local con Gemini Vision
+      const analysis = await analyzeCrossImage(
+        selectedImage,
+        selectedCross?.nombre || null,
+        parentInfo || null
       );
 
-      const data = await response.json();
+      setAnalysisResult(analysis);
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Error en el análisis');
-      }
-
-      setAnalysisResult(data.analysis);
-
-      // Agregar al historial local
-      if (data.saved_id) {
-        setAnalysisHistory(prev => [{
-          id: data.saved_id,
-          cross_id: selectedCross?.id || 0,
-          owner_key: user?.key || '',
-          image_url: selectedImage,
-          image_type: 'progeny',
-          analysis_result: data.analysis,
-          confidence_score: data.analysis.confidence || 0.8,
-          model_used: data.model,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }, ...prev]);
-      }
+      // Agregar al historial local en memoria
+      setAnalysisHistory(prev => [{
+        id: `local_${Date.now()}`,
+        cross_id: selectedCross?.id || 0,
+        owner_key: user?.key || '',
+        image_url: selectedImage,
+        image_type: 'progeny',
+        analysis_result: analysis,
+        confidence_score: analysis.confidence || 0.8,
+        model_used: 'gemini-2.0-flash',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }, ...prev]);
 
     } catch (err: any) {
       console.error('Error analyzing:', err);

@@ -587,9 +587,9 @@ const DiaryScreen: React.FC = () => {
           <AssetIcon name="icon-home" size={24} className="opacity-40" />
           <span className="text-[9px] font-bold uppercase tracking-widest">Home</span>
         </button>
-        <button onClick={() => navigate('/discovery')} className="flex flex-col items-center gap-1.5 text-[#8E877F] active:scale-95 transition-transform">
-          <AssetIcon name="icon-vivero" size={24} className="opacity-40" />
-          <span className="text-[9px] font-bold uppercase tracking-widest">Mapa</span>
+        <button onClick={() => navigate('/crosses')} className="flex flex-col items-center gap-1.5 text-[#8E877F] active:scale-95 transition-transform">
+          <AssetIcon name="icon-crosses" size={24} className="opacity-40" />
+          <span className="text-[9px] font-bold uppercase tracking-widest">Cruzas</span>
         </button>
         <button onClick={() => navigate('/plants')} className="flex flex-col items-center gap-1.5 text-[#8E877F] active:scale-95 transition-transform">
           <AssetIcon name="icon-plants" size={24} className="opacity-40" />

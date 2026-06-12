@@ -14,7 +14,7 @@ interface DesktopLayoutProps {
 
 export const DesktopLayout: React.FC<DesktopLayoutProps> = ({ children }) => {
     const { t } = useTranslation();
-    const { user, logout } = useAuth();
+    const { user } = useAuth();
     const { currentLogo } = useTheme();
     const navigate = useNavigate();
     const location = useLocation();
@@ -23,10 +23,10 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = ({ children }) => {
         { name: t('layout.menu.dashboard'), icon: 'dashboard', path: '/dashboard' },
         { name: t('layout.menu.addPlant'), icon: 'add_circle', path: '/add' },
         { name: t('layout.menu.myPlants'), icon: 'potted_plant', path: '/plants' },
-        { name: t('layout.menu.shop'), icon: 'storefront', path: '/shop-manager' },
         { name: t('layout.menu.diary'), icon: 'menu_book', path: '/diary' },
         { name: t('layout.menu.crosses'), icon: 'hub', path: '/crosses' },
-        { name: t('layout.menu.messages'), icon: 'mail', path: '/inbox' },
+        { name: 'Banco Semillas', icon: 'eco', path: '/seed-bank' },
+        { name: t('dashboard.menu.alerts'), icon: 'notifications', path: '/alerts' },
         { name: t('layout.menu.ai'), icon: 'auto_awesome', path: '/ai' },
     ];
 
@@ -98,13 +98,6 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = ({ children }) => {
                         </button>
                     </div>
 
-                    <button
-                        onClick={logout}
-                        className="w-full flex items-center justify-center gap-2 py-3 text-[#EF4444] font-bold text-xs uppercase tracking-widest hover:bg-red-500/10 rounded-xl transition-all"
-                    >
-                        <Icon name="logout" className="text-xl" />
-                        {t('layout.logout')}
-                    </button>
                 </div>
             </aside>
 

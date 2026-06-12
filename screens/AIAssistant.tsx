@@ -3,8 +3,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Icon } from '../components/Icon';
 import { CarniBotIcon } from '../components/CarniBotIcon';
-import { supabase } from '../supabaseClient';
-import { useAuth } from '../context/AuthContext';
+import { useApp } from '../context/AppContext';
+import { askCarniBot } from '../utils/carniBot';
 
 interface Message {
   id: number;
@@ -16,7 +16,7 @@ interface Message {
 const AIAssistant: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { plants, addAlert, addDiaryEntry } = useApp();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
@@ -29,61 +29,6 @@ const AIAssistant: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Bloqueo para cualquier nivel que no sea ELITE
-  if (user?.plan !== 'elite') {
-    return (
-      <div className="min-h-screen bg-[#F5F1EB] p-6 flex flex-col items-center justify-center text-center font-display relative overflow-hidden">
-        {/* Paper texture */}
-        <div className="absolute inset-0 opacity-20 pointer-events-none z-0" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/cream-paper.png")' }} />
-
-        <div className="bg-white border text-[#4A5D4F] border-[#4A5D4F]/10 p-8 rounded-[32px] max-w-sm relative z-10 shadow-[0_20px_40px_rgba(74,93,79,0.1)]">
-          <div className="w-24 h-24 bg-[#E8F5E9] rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-            <CarniBotIcon className="w-14 h-14 text-[#4CAF50]" />
-          </div>
-          <h2 className="text-2xl font-black text-[#2E2E2E] mb-2 tracking-tight">Acceso Bloqueado</h2>
-          <p className="text-[#8E877F] text-sm mb-6 leading-relaxed">
-            La Inteligencia Artificial avanzada de Carni Bot solo está disponible para usuarios <strong className="text-indigo-600 font-serif">ELITE</strong>.
-          </p>
-          <div className="bg-[#F5F7F5] rounded-2xl p-5 text-left space-y-3 mb-6 border border-[#4A5D4F]/5">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#4A5D4F]">
-              <Icon name="check_circle" className="text-[#4CAF50] text-sm" /> Identificación botánica
-            </div>
-            <div className="flex items-center gap-2 text-xs font-bold text-[#4A5D4F]">
-              <Icon name="check_circle" className="text-[#4CAF50] text-sm" /> Diagnóstico de plagas
-            </div>
-            <div className="flex items-center gap-2 text-xs font-bold text-[#4A5D4F]">
-              <Icon name="check_circle" className="text-[#4CAF50] text-sm" /> Asesoría 24/7
-            </div>
-          </div>
-          <button onClick={() => navigate(-1)} className="text-[#4A5D4F] font-bold underline hover:text-[#2E2E2E] transition-colors text-sm">
-            Volver al Inicio
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Check for Local Admin (who has no Server Session)
-  if (user?.uid === 'ADMIN-DEVICE-MASTER') {
-    return (
-      <div className="min-h-screen bg-[#F5F1EB] p-6 flex flex-col items-center justify-center text-center font-display">
-        <div className="bg-white p-6 rounded-2xl shadow-lg max-w-xs">
-          <Icon name="warning" className="text-4xl text-yellow-500 mx-auto mb-4" />
-          <h2 className="text-lg font-bold text-[#2E2E2E] mb-2">Modo Admin Local</h2>
-          <p className="text-sm text-[#8E877F] mb-4">
-            Estás usando el usuario "Super Admin Local". Este usuario no existe en la base de datos real, por lo que **no puede usar la IA** (requiere autenticación de servidor).
-          </p>
-          <p className="text-xs text-[#4A5D4F] mb-4">
-            Por favor inicia sesión con tu cuenta real de prueba.
-          </p>
-          <button onClick={() => navigate(-1)} className="bg-[#4A5D4F] text-white px-4 py-2 rounded-full text-sm font-bold">
-            Entendido
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -136,26 +81,13 @@ const AIAssistant: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // 2. Call Secure Edge Function with EXPLICIT Authorization
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-
-      if (!token) throw new Error("No hay sesión activa. Intenta volver a conectar.");
-
-      const { data, error } = await supabase.functions.invoke('carni-bot-ai', {
-        body: {
-          messages: [...messages, newUserMsg], // Send history + new message
-          image: selectedImage
-        },
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (error) throw error;
-
-      // 3. Add Model Response to UI
-      const textResponse = data.text || "Lo siento, no pude procesar esa solicitud.";
+      // 2. Llamada directa a Gemini desde el dispositivo (con herramientas locales)
+      const textResponse = await askCarniBot(
+        [...messages, newUserMsg].map(m => ({ role: m.role, text: m.text })),
+        newUserMsg.image || null,
+        plants,
+        { addAlert, addDiaryEntry }
+      );
 
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
