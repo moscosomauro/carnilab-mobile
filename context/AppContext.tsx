@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext';
 import { logger } from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { objectiveEvents } from '../utils/dailyObjectives';
+import { loadTable, saveTable, migrateFromLocalStorage, TableKey } from '../db/localDb';
 
 // ============================================================
 // APP CONTEXT - 100% LOCAL
@@ -100,54 +101,52 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return Date.now() + hash;
   };
 
+  // Persiste un array a IndexedDB (fire-and-forget; la UI ya se actualizó vía setState)
   const saveToLocal = (key: string, data: any) => {
-    try {
-      if (user?.key) localStorage.setItem(`${user.key}_${key}`, JSON.stringify(data));
-    } catch (e: any) {
-      logger.error('LocalStorage lleno al guardar', key, e);
-      showErrorToast('Almacenamiento local lleno. Exporta un backup y libera espacio.');
-    }
+    // 'inbox' es legacy y queda solo en memoria (sin nube no llegan mensajes nuevos)
+    if (key === 'inbox') return;
+    saveTable(key as TableKey, data).catch((e: any) => {
+      logger.error('Error guardando en IndexedDB', key, e);
+      showErrorToast('No se pudieron guardar los datos en el dispositivo.');
+    });
   };
 
-  const loadFromLocal = () => {
+  const loadFromLocal = async () => {
     if (!user) return;
-
-    const read = (key: string) => {
-      const raw = localStorage.getItem(`${user.key}_${key}`);
-      try { return raw ? JSON.parse(raw) : null; } catch { return null; }
-    };
-
-    const localPlants = read('plants');
-    if (localPlants) setPlants(localPlants);
-
-    const localCrosses = read('crosses');
-    if (localCrosses) setCrosses(localCrosses);
-
-    const localAlerts = read('alerts');
-    if (localAlerts) setAlerts(localAlerts);
-
-    const localDiary = read('diary');
-    if (localDiary) setDiary(localDiary);
-
-    const localClimate = read('climate');
-    if (localClimate) setClimateLogs(localClimate);
-
-    const localInbox = read('inbox');
-    if (localInbox) setInbox(localInbox);
-
-    const localSeedBank = read('seedbank');
-    if (localSeedBank) setSeedBank(localSeedBank);
+    try {
+      const [p, c, a, d, cl, sb] = await Promise.all([
+        loadTable<Plant>('plants'),
+        loadTable<Cross>('crosses'),
+        loadTable<Alert>('alerts'),
+        loadTable<DiaryEntry>('diary'),
+        loadTable<ClimateLog>('climate'),
+        loadTable<SeedBatch>('seedbank'),
+      ]);
+      // Orden descendente por id (lo más nuevo primero), como esperaban las pantallas
+      const byIdDesc = (x: any, y: any) => (y.id || 0) - (x.id || 0);
+      setPlants(p.sort(byIdDesc));
+      setCrosses(c.sort(byIdDesc));
+      setAlerts(a.sort(byIdDesc));
+      setDiary(d.sort(byIdDesc));
+      setClimateLogs(cl.sort((x, y) => new Date(y.date).getTime() - new Date(x.date).getTime()));
+      setSeedBank(sb.sort(byIdDesc));
+    } catch (e) {
+      logger.error('Error cargando desde IndexedDB', e);
+    }
   };
 
   useEffect(() => {
     if (user && user.isAuthenticated) {
-      loadFromLocal();
+      // Migración única localStorage -> IndexedDB, luego cargar
+      migrateFromLocalStorage(user.key)
+        .catch(e => logger.error('Error en migración a IndexedDB', e))
+        .finally(() => loadFromLocal());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchData = async () => {
-    loadFromLocal();
+    await loadFromLocal();
   };
 
   // ✅ Error Toast Helpers
@@ -513,7 +512,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         markMessageRead,
         refreshInbox,
         dismissNotification,
-        syncData: async () => { loadFromLocal(); },
+        syncData: async () => { await loadFromLocal(); },
         restoreData,
         loadingError,
         fetchData,

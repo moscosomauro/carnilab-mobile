@@ -2,6 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { clearAllData } from '../db/localDb';
 
 // --- ICONS ---
 const IconBack = () => (
@@ -36,12 +37,31 @@ const IconUpload = () => (
 
 const BackupScreen: React.FC = () => {
   const navigate = useNavigate();
-  const { plants, crosses, alerts, diary, climateLogs, seedBank, restoreData } = useApp();
+  const { plants, crosses, alerts, diary, climateLogs, seedBank, restoreData, fetchData } = useApp();
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleClearAll = async () => {
+    const total = plants.length + crosses.length + alerts.length + diary.length + climateLogs.length + seedBank.length;
+    if (!window.confirm(`⚠️ Esto borrará TODOS tus datos de este dispositivo (${total} registros).\n\nAsegurate de tener un backup descargado antes. ¿Continuar?`)) return;
+    if (!window.confirm('Esta acción no se puede deshacer. ¿Borrar todo de verdad?')) return;
+    setIsRestoring(true);
+    try {
+      await clearAllData();
+      await fetchData();
+      setSuccessMsg('Datos borrados');
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (e) {
+      console.error(e);
+      alert('Error al borrar los datos.');
+    } finally {
+      setIsRestoring(false);
+    }
+  };
 
   const buildBackup = () => ({
     timestamp: new Date().toISOString(),
@@ -163,6 +183,21 @@ const BackupScreen: React.FC = () => {
             <IconUpload /> Cargar archivo .JSON
           </button>
           <input type="file" ref={fileInputRef} accept=".json" className="hidden" onChange={handleFileSelect} />
+        </div>
+
+        {/* Zona peligrosa */}
+        <div className="w-full mb-8">
+          <h3 className="text-xs font-black text-[#C0392B]/70 uppercase tracking-wider mb-3 ml-2">Zona Peligrosa</h3>
+          <button
+            onClick={handleClearAll}
+            disabled={isRestoring}
+            className="w-full h-12 bg-[#C0392B]/10 border border-[#C0392B]/30 rounded-2xl text-[#C0392B] text-xs font-black flex items-center justify-center gap-2 active:scale-95 transition-all hover:bg-[#C0392B]/15 disabled:opacity-50"
+          >
+            Borrar todos los datos
+          </button>
+          <p className="text-[10px] text-[#8E877F] mt-2 ml-2 opacity-70">
+            Útil antes de reimportar un backup desde cero (evita duplicar lo que ya tenías).
+          </p>
         </div>
 
         <p className="text-[10px] text-[#8E877F] text-center leading-relaxed px-4 opacity-70">
