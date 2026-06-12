@@ -53,23 +53,6 @@ export default defineConfig({
         // Aumentar límite para bundles grandes
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB (antes 2 MB)
       },
-      workbox: {
-        // Cachear imágenes y api responses
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/szscgmqkcwlzceyisbpi\.supabase\.co\/.*$/,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'supabase-api-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 // 1 día
-              },
-              networkTimeoutSeconds: 3
-            }
-          }
-        ]
-      },
       devOptions: {
         enabled: true,
         type: 'module',

@@ -2,6 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './src/i18n';
+import './src/index.css';   // Tailwind local + fuentes offline
+import './src/theme.css';   // Variables de color y temas
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
