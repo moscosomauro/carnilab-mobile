@@ -1,41 +1,46 @@
 
 
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { HashRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
-import Dashboard from './screens/Dashboard';
-import AddPlant from './screens/AddPlant';
-import Alerts from './screens/Alerts';
-import PlantDetails from './screens/PlantDetails';
-import Diary from './screens/Diary';
-import PlantList from './screens/PlantList';
-import CrossesScreen from './screens/Crosses';
-import GenealogyScreen from './screens/GenealogyScreen';
-import BackupScreen from './screens/Backup';
-import AIAssistant from './screens/AIAssistant';
-import LoginScreen from './screens/LoginScreen';
-import AdminKeys from './screens/AdminKeys';
-import AdminPrices from './screens/AdminPrices';
-import AdminDashboard from './screens/admin/AdminDashboard'; // Web Admin
-import AdminThemeScreen from './screens/admin/AdminThemeScreen';
-import AdminUsers from './screens/admin/AdminUsers'; // Web Admin
-import LandingPage from './screens/LandingPage'; // Landing Publica
-import PublicGallery from './screens/PublicGallery'; // Galería Pública (Fase 2)
-import ClimateScreen from './screens/ClimateScreen'; // Fase 2 Clima
-import InboxScreen from './screens/InboxScreen'; // Nueva Pantalla Inbox
-import ChatScreen from './screens/ChatScreen';
-import ProfileScreen from './screens/ProfileScreen';
-import SystemStatus from './screens/SystemStatus';
-import DesignConcept from './screens/DesignConcept'; // Mockup de Diseño
-import GeneticCalculatorScreen from './screens/GeneticCalculatorScreen';
-import CultivarGeneratorScreen from './screens/CultivarGeneratorScreen';
-import ShopManager from './screens/shop/ShopManager';
-import ShopPublic from './screens/shop/ShopPublic';
-import { QRDesignShowcase } from './screens/QRDesignShowcase';
-import DiscoveryPrototype from './screens/DiscoveryPrototype';
-import SeedBankScreen from './screens/SeedBankScreen';
+
+// Lazy loaded screens - reduces initial bundle size significantly
+const Dashboard = lazy(() => import('./screens/Dashboard'));
+const AddPlant = lazy(() => import('./screens/AddPlant'));
+const Alerts = lazy(() => import('./screens/Alerts'));
+const PlantDetails = lazy(() => import('./screens/PlantDetails'));
+const Diary = lazy(() => import('./screens/Diary'));
+const PlantList = lazy(() => import('./screens/PlantList'));
+const CrossesScreen = lazy(() => import('./screens/Crosses'));
+const GenealogyScreen = lazy(() => import('./screens/GenealogyScreen'));
+const BackupScreen = lazy(() => import('./screens/Backup'));
+const AIAssistant = lazy(() => import('./screens/AIAssistant'));
+const LoginScreen = lazy(() => import('./screens/LoginScreen'));
+const AdminKeys = lazy(() => import('./screens/AdminKeys'));
+const AdminPrices = lazy(() => import('./screens/AdminPrices'));
+const AdminDashboard = lazy(() => import('./screens/admin/AdminDashboard'));
+const AdminThemeScreen = lazy(() => import('./screens/admin/AdminThemeScreen'));
+const AdminUsers = lazy(() => import('./screens/admin/AdminUsers'));
+const LandingPage = lazy(() => import('./screens/LandingPage'));
+const PublicGallery = lazy(() => import('./screens/PublicGallery'));
+const ClimateScreen = lazy(() => import('./screens/ClimateScreen'));
+const InboxScreen = lazy(() => import('./screens/InboxScreen'));
+const ChatScreen = lazy(() => import('./screens/ChatScreen'));
+const ProfileScreen = lazy(() => import('./screens/ProfileScreen'));
+const SystemStatus = lazy(() => import('./screens/SystemStatus'));
+const DesignConcept = lazy(() => import('./screens/DesignConcept'));
+// const GeneticCalculatorScreen = lazy(() => import('./screens/GeneticCalculatorScreen')); // Deprecated - replaced by Lab
+const CultivarGeneratorScreen = lazy(() => import('./screens/CultivarGeneratorScreen'));
+const ShopManager = lazy(() => import('./screens/shop/ShopManager'));
+const ShopPublic = lazy(() => import('./screens/shop/ShopPublic'));
+const QRDesignShowcase = lazy(() => import('./screens/QRDesignShowcase').then(m => ({ default: m.QRDesignShowcase })));
+const DiscoveryPrototype = lazy(() => import('./screens/DiscoveryPrototype'));
+const SeedBankScreen = lazy(() => import('./screens/SeedBankScreen'));
+const LabScreen = lazy(() => import('./screens/Lab'));
+
+// Non-lazy components (always needed)
 import { NotificationToast } from './components/NotificationToast';
 import { DesktopLayout } from './components/DesktopLayout';
 import { CarniBotIcon } from './components/CarniBotIcon';
@@ -43,6 +48,17 @@ import { BroadcastProvider } from './context/BroadcastContext';
 import { BroadcastBanner } from './components/BroadcastBanner';
 import { ThemeParticles } from './components/ThemeParticles';
 import { ThemeDecorations } from './components/ThemeDecorations';
+import { DynamicBackground } from './components/DynamicBackground';
+
+// Loading fallback component
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-transparent">
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
+      <span className="text-xs text-slate-400">Cargando...</span>
+    </div>
+  </div>
+);
 
 
 
@@ -139,6 +155,7 @@ const PlanRoute: React.FC<{ children: React.ReactNode, requiredPlan: 'pro' | 'el
 
 const AppRoutes: React.FC = () => {
   return (
+    <Suspense fallback={<PageLoader />}>
     <Routes>
       {/* Ruta Raíz - Landing Page */}
       <Route path="/" element={<LandingPage />} />
@@ -176,14 +193,15 @@ const AppRoutes: React.FC = () => {
           <PlanRoute requiredPlan="pro"><ClimateScreen /></PlanRoute>
         </ProtectedRoute>
       } />
-      <Route path="/calculator" element={
-        <ProtectedRoute>
-          <PlanRoute requiredPlan="pro"><GeneticCalculatorScreen /></PlanRoute>
-        </ProtectedRoute>
-      } />
+      {/* /calculator replaced by /lab - GeneticCalculatorScreen deprecated */}
       <Route path="/cultivar-gen" element={
         <ProtectedRoute>
           <PlanRoute requiredPlan="pro"><CultivarGeneratorScreen /></PlanRoute>
+        </ProtectedRoute>
+      } />
+      <Route path="/lab" element={
+        <ProtectedRoute>
+          <PlanRoute requiredPlan="pro"><LabScreen /></PlanRoute>
         </ProtectedRoute>
       } />
       <Route path="/shop-manager" element={
@@ -225,10 +243,9 @@ const AppRoutes: React.FC = () => {
       <Route path="/design" element={<DesignConcept />} />
       <Route path="/discovery" element={<DiscoveryPrototype />} />
     </Routes>
+    </Suspense>
   );
 };
-
-import { DynamicBackground } from './components/DynamicBackground';
 
 const App: React.FC = () => {
   return (
@@ -279,21 +296,23 @@ const AppContent: React.FC = () => {
       <ThemeDecorations />
 
       <div className="min-h-screen w-full bg-transparent text-slate-100 font-sans selection:bg-teal-500/30 selection:text-white">
-        <Routes>
-          {/* Admin Routes - Standalone Layout */}
-          <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-          <Route path="/admin/keys" element={<AdminRoute><AdminKeys /></AdminRoute>} />
-          <Route path="/admin/prices" element={<AdminRoute><AdminPrices /></AdminRoute>} />
-          <Route path="/admin/theme" element={<AdminRoute><AdminThemeScreen /></AdminRoute>} />
-          <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            {/* Admin Routes - Standalone Layout */}
+            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+            <Route path="/admin/keys" element={<AdminRoute><AdminKeys /></AdminRoute>} />
+            <Route path="/admin/prices" element={<AdminRoute><AdminPrices /></AdminRoute>} />
+            <Route path="/admin/theme" element={<AdminRoute><AdminThemeScreen /></AdminRoute>} />
+            <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
 
-          {/* Main App Routes - Wrapped in DesktopLayout */}
-          <Route path="/*" element={
-            <DesktopLayout>
-              <AppRoutes />
-            </DesktopLayout>
-          } />
-        </Routes>
+            {/* Main App Routes - Wrapped in DesktopLayout */}
+            <Route path="/*" element={
+              <DesktopLayout>
+                <AppRoutes />
+              </DesktopLayout>
+            } />
+          </Routes>
+        </Suspense>
       </div>
     </HashRouter>
   );

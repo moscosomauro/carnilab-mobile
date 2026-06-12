@@ -61,3 +61,12 @@ debug_*.mjs
 # Windows
 nul
 Thumbs.db
+
+# Capacitor - Native builds (opcional, algunos prefieren incluirlos)
+# android/app/build/
+# ios/App/Pods/
+*.keystore
+*.jks
+
+# Backup local de datos de la nube (Fase 0)
+cloud_backup/

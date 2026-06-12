@@ -1,126 +1,486 @@
 :root {
   /* =========================================
-     DEFAULT THEME (Modern Clinical / Organic)
+     DEFAULT THEME (Sarracenias MAR - Premium)
      ========================================= */
-  /* Original Dashboard Colors */
-  --color-brand-bg: #f7f9f6;
-  --color-brand-surface: #ffffff;
-  --color-brand-dark: #2E2E2E;
-  /* Was #2c3e50, updated to match Dashboard text */
-  --color-brand-light: #7f8c8d;
-  --color-brand-primary: #5E7B4C;
-  /* Original Green */
-  --color-brand-secondary: #4A3325;
-  /* Original Brown */
-  --color-brand-accent: #D9C9A2;
-  /* Original Beige */
+  --color-brand-bg: #F2EDD8;            /* Crema Marfil (Fondo Claro Secundario) */
+  --color-brand-surface: #ffffff;       /* Fondo de tarjeta blanco */
+  --color-brand-dark: #0D0D0D;          /* Negro Profundo (Texto Principal) */
+  --color-brand-light: #8A8448;         /* Verde Oliva (Texto Secundario/Soporte) */
+  --color-brand-primary: #7A1E2C;       /* Borgoña Profundo */
+  --color-brand-secondary: #5F603E;     /* Verde Oliva Oscuro */
+  --color-brand-accent: #A8323E;        /* Rojo Vino */
   --color-brand-text-on-primary: #ffffff;
 }
 
+/* Modo Oscuro Sarracenias MAR (Fondo Oscuro Principal) */
+html.dark, :root.dark {
+  --color-brand-bg: #0D0D0D;            /* Negro Profundo */
+  --color-brand-surface: #1E1F1A;       /* Verde Oliva Oscuro / Negro Mix */
+  --color-brand-dark: #F2EDD8;          /* Crema Marfil (Texto Principal) */
+  --color-brand-light: #8A8448;         /* Verde Oliva */
+  --color-brand-primary: #7A1E2C;       /* Borgoña Profundo */
+  --color-brand-secondary: #5F603E;     /* Verde Oliva Oscuro */
+  --color-brand-accent: #A8323E;        /* Rojo Vino */
+  --color-brand-text-on-primary: #ffffff;
+}
+
+/* Reglas de fuentes globales según branding */
+body {
+  font-family: 'Poppins', sans-serif !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Montserrat', sans-serif !important;
+  font-weight: 700;
+}
+
+.font-accent {
+  font-family: 'Playfair Display', serif !important;
+}
+
 /* =========================================
-     CHRISTMAS THEME 🎄
+     CHRISTMAS THEME 🎄 - Premium Edition
      ========================================= */
 body.theme-christmas {
-  --color-brand-bg: #c0392b;
-  /* Santa Red Background */
-  --color-brand-surface: #ffffff;
-  --color-brand-dark: #2c3e50;
-  /* Dark text for contrast */
+  --color-brand-bg: #1a472a;
+  --color-brand-surface: rgba(255, 255, 255, 0.9);
+  --color-brand-dark: #ffffff;
   --color-brand-light: #ecf0f1;
-  --color-brand-primary: #ffffff;
-  /* White Elements */
+  --color-brand-primary: #c0392b;
   --color-brand-secondary: #27ae60;
-  /* Green Secondary */
-  --color-brand-accent: #c0392b;
-  /* Red Accent (Christmas) */
-  --color-brand-text-on-primary: #c0392b;
-  /* Red Text on White buttons */
+  --color-brand-accent: #ffd700;
+  --color-brand-text-on-primary: #ffffff;
+
+  background: linear-gradient(135deg, #1a472a 0%, #2d5a3f 50%, #1a472a 100%) !important;
+  min-height: 100vh;
+}
+
+/* Christmas Glassmorphism Cards */
+body.theme-christmas .glass-card,
+body.theme-christmas [class*="card"],
+body.theme-christmas [class*="Card"] {
+  background: rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Christmas Premium Buttons */
+body.theme-christmas button:not(.flex-col):not([class*="icon"]),
+body.theme-christmas [class*="btn"]:not(.flex-col),
+body.theme-christmas [class*="Btn"]:not(.flex-col) {
+  background: linear-gradient(135deg, #d44a3a 0%, #c0392b 50%, #a82a1f 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 4px 15px rgba(192, 57, 43, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease !important;
+}
+
+body.theme-christmas button:not(.flex-col):hover {
+  background: linear-gradient(135deg, #e05545 0%, #d44a3a 50%, #c0392b 100%) !important;
+  box-shadow: 0 6px 20px rgba(192, 57, 43, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Christmas Icon Buttons */
+body.theme-christmas button.flex-col {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+body.theme-christmas button.flex-col > div {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(192, 57, 43, 0.15) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15) !important;
+}
+
+body.theme-christmas button.flex-col:hover > div {
+  transform: scale(1.02);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Christmas Secondary Buttons (green) */
+body.theme-christmas button[class*="secondary"] {
+  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 50%, #1e8449 100%) !important;
 }
 
 /* =========================================
-     HALLOWEEN THEME 🎃
+     HALLOWEEN THEME 🎃 - Premium Edition
      ========================================= */
 body.theme-halloween {
-  --color-brand-bg: #1a1a1a;
-  --color-brand-surface: #2d2d2d;
+  --color-brand-bg: #0d0d0d;
+  --color-brand-surface: rgba(45, 45, 45, 0.9);
   --color-brand-dark: #ffffff;
-  /* White text for dark mode */
   --color-brand-light: #bdc3c7;
   --color-brand-primary: #e67e22;
-  /* Pumpkin Orange */
   --color-brand-secondary: #8e44ad;
-  /* Witch Purple */
   --color-brand-accent: #c0392b;
-  /* Blood Red */
   --color-brand-text-on-primary: #ffffff;
+
+  background: linear-gradient(135deg, #0d0d0d 0%, #1a1a2e 50%, #16213e 100%) !important;
+  min-height: 100vh;
+}
+
+/* Halloween Glassmorphism Cards */
+body.theme-halloween .glass-card,
+body.theme-halloween [class*="card"],
+body.theme-halloween [class*="Card"] {
+  background: rgba(45, 45, 45, 0.6) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(230, 126, 34, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Halloween Premium Buttons */
+body.theme-halloween button:not(.flex-col):not([class*="icon"]),
+body.theme-halloween [class*="btn"]:not(.flex-col),
+body.theme-halloween [class*="Btn"]:not(.flex-col) {
+  background: linear-gradient(135deg, #f39c12 0%, #e67e22 50%, #d35400 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 15px rgba(230, 126, 34, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: all 0.3s ease !important;
+}
+
+body.theme-halloween button:not(.flex-col):hover {
+  background: linear-gradient(135deg, #f5ab35 0%, #f39c12 50%, #e67e22 100%) !important;
+  box-shadow: 0 6px 20px rgba(230, 126, 34, 0.6), 0 0 30px rgba(230, 126, 34, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Halloween Icon Buttons */
+body.theme-halloween button.flex-col {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+body.theme-halloween button.flex-col > div {
+  background: rgba(30, 30, 30, 0.95) !important;
+  border: 1px solid rgba(230, 126, 34, 0.2) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.theme-halloween button.flex-col:hover > div {
+  transform: scale(1.02);
+  box-shadow: 0 6px 20px rgba(230, 126, 34, 0.3) !important;
+}
+
+/* Halloween Secondary Buttons (purple) */
+body.theme-halloween button[class*="secondary"] {
+  background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 50%, #7d3c98 100%) !important;
 }
 
 /* =========================================
-     PRIMAVERA (SPRING) THEME 🌸
+     PRIMAVERA (SPRING) THEME 🌸 - Premium Edition
      ========================================= */
 body.theme-spring {
   --color-brand-bg: #fef9f3;
-  --color-brand-surface: #ffffff;
+  --color-brand-surface: rgba(255, 255, 255, 0.9);
   --color-brand-dark: #4a5568;
   --color-brand-light: #cbd5e0;
-  --color-brand-primary: #ff69b4;
-  /* Hot Pink */
-  --color-brand-secondary: #98d8c8;
-  /* Mint Green */
-  --color-brand-accent: #ffd700;
-  /* Golden Yellow */
+  --color-brand-primary: #ec4899;
+  --color-brand-secondary: #10b981;
+  --color-brand-accent: #fbbf24;
   --color-brand-text-on-primary: #ffffff;
+
+  background: linear-gradient(135deg, #fef9f3 0%, #fce7f3 50%, #f0fdf4 100%) !important;
+  min-height: 100vh;
+}
+
+/* Spring Glassmorphism Cards */
+body.theme-spring .glass-card,
+body.theme-spring [class*="card"],
+body.theme-spring [class*="Card"] {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(236, 72, 153, 0.15);
+  box-shadow: 0 8px 32px rgba(236, 72, 153, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* Spring Premium Buttons */
+body.theme-spring button:not(.flex-col):not([class*="icon"]),
+body.theme-spring [class*="btn"]:not(.flex-col),
+body.theme-spring [class*="Btn"]:not(.flex-col) {
+  background: linear-gradient(135deg, #f472b6 0%, #ec4899 50%, #db2777 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: all 0.3s ease !important;
+}
+
+body.theme-spring button:not(.flex-col):hover {
+  background: linear-gradient(135deg, #f9a8d4 0%, #f472b6 50%, #ec4899 100%) !important;
+  box-shadow: 0 6px 20px rgba(236, 72, 153, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Spring Icon Buttons */
+body.theme-spring button.flex-col {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+body.theme-spring button.flex-col > div {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(236, 72, 153, 0.1) !important;
+  box-shadow: 0 4px 15px rgba(236, 72, 153, 0.1) !important;
+}
+
+body.theme-spring button.flex-col:hover > div {
+  transform: scale(1.02);
+  box-shadow: 0 6px 20px rgba(236, 72, 153, 0.15) !important;
+}
+
+/* Spring Secondary Buttons (mint green) */
+body.theme-spring button[class*="secondary"] {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%) !important;
 }
 
 /* =========================================
-     VERANO (SUMMER) THEME ☀️
+     VERANO (SUMMER) THEME ☀️ - Premium Edition
      ========================================= */
 body.theme-summer {
-  --color-brand-bg: #fff8dc;
-  --color-brand-surface: #fffacd;
-  --color-brand-dark: #2d3748;
+  --color-brand-bg: #fffbeb;
+  --color-brand-surface: rgba(255, 255, 255, 0.9);
+  --color-brand-dark: #1e3a5f;
   --color-brand-light: #a0aec0;
-  --color-brand-primary: #ffa500;
-  /* Orange */
-  --color-brand-secondary: #00ced1;
-  /* Turquoise */
-  --color-brand-accent: #ff6347;
-  /* Tomato Red */
+  --color-brand-primary: #f59e0b;
+  --color-brand-secondary: #06b6d4;
+  --color-brand-accent: #ef4444;
   --color-brand-text-on-primary: #ffffff;
+
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fff7ed 100%) !important;
+  min-height: 100vh;
+}
+
+/* Summer Glassmorphism Cards */
+body.theme-summer .glass-card,
+body.theme-summer [class*="card"],
+body.theme-summer [class*="Card"] {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(245, 158, 11, 0.15);
+  box-shadow: 0 8px 32px rgba(245, 158, 11, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* Summer Premium Buttons */
+body.theme-summer button:not(.flex-col):not([class*="icon"]),
+body.theme-summer [class*="btn"]:not(.flex-col),
+body.theme-summer [class*="Btn"]:not(.flex-col) {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: all 0.3s ease !important;
+}
+
+body.theme-summer button:not(.flex-col):hover {
+  background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 50%, #f59e0b 100%) !important;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Summer Icon Buttons */
+body.theme-summer button.flex-col {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+body.theme-summer button.flex-col > div {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(245, 158, 11, 0.1) !important;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.1) !important;
+}
+
+body.theme-summer button.flex-col:hover > div {
+  transform: scale(1.02);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.15) !important;
+}
+
+/* Summer Secondary Buttons (turquoise) */
+body.theme-summer button[class*="secondary"] {
+  background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 50%, #0891b2 100%) !important;
 }
 
 /* =========================================
-     OTOÑO (AUTUMN) THEME 🍂
+     OTOÑO (AUTUMN) THEME 🍂 - Premium Edition
      ========================================= */
 body.theme-autumn {
-  --color-brand-bg: #faf0e6;
-  --color-brand-surface: #fff5ee;
-  --color-brand-dark: #3e2723;
-  --color-brand-light: #8d6e63;
-  --color-brand-primary: #d2691e;
-  /* Chocolate */
-  --color-brand-secondary: #cd853f;
-  /* Peru */
-  --color-brand-accent: #dc143c;
-  /* Crimson */
+  --color-brand-bg: linear-gradient(135deg, #fdf6e3 0%, #f5e6d3 50%, #efe0d1 100%);
+  --color-brand-surface: rgba(255, 250, 245, 0.85);
+  --color-brand-dark: #4a3728;
+  --color-brand-light: #a08679;
+  --color-brand-primary: #c75d20;
+  /* Warm Amber */
+  --color-brand-secondary: #8b5a2b;
+  /* Rich Brown */
+  --color-brand-accent: #b8860b;
+  /* Dark Goldenrod */
   --color-brand-text-on-primary: #ffffff;
+
+  /* Autumn gradient background */
+  background: linear-gradient(135deg, #fdf6e3 0%, #f5e6d3 50%, #efe0d1 100%) !important;
+  min-height: 100vh;
+}
+
+/* Autumn Glassmorphism Cards */
+body.theme-autumn .glass-card,
+body.theme-autumn [class*="card"],
+body.theme-autumn [class*="Card"] {
+  background: rgba(255, 250, 245, 0.7) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(199, 93, 32, 0.15);
+  box-shadow:
+    0 8px 32px rgba(139, 90, 43, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* Autumn Premium Buttons - Only action buttons, not icon containers */
+body.theme-autumn button:not(.flex-col):not([class*="icon"]),
+body.theme-autumn [class*="btn"]:not(.flex-col),
+body.theme-autumn [class*="Btn"]:not(.flex-col) {
+  background: linear-gradient(135deg, #d4722a 0%, #c75d20 50%, #b54d15 100%) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow:
+    0 4px 15px rgba(199, 93, 32, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease !important;
+}
+
+/* Autumn Icon Buttons - Keep clean white look */
+body.theme-autumn button.flex-col,
+body.theme-autumn button[class*="icon"] {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Autumn Icon Containers - Clean white with subtle shadow */
+body.theme-autumn button.flex-col > div,
+body.theme-autumn .icon-container {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(199, 93, 32, 0.1) !important;
+  box-shadow: 0 4px 15px rgba(139, 90, 43, 0.1) !important;
+}
+
+body.theme-autumn button:not(.flex-col):hover,
+body.theme-autumn [class*="btn"]:not(.flex-col):hover,
+body.theme-autumn [class*="Btn"]:not(.flex-col):hover {
+  background: linear-gradient(135deg, #e07830 0%, #d4722a 50%, #c75d20 100%) !important;
+  box-shadow:
+    0 6px 20px rgba(199, 93, 32, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Icon button hover - subtle scale */
+body.theme-autumn button.flex-col:hover > div {
+  transform: scale(1.02);
+  box-shadow: 0 6px 20px rgba(139, 90, 43, 0.15) !important;
+}
+
+/* Autumn Secondary Buttons (crimson/red ones) */
+body.theme-autumn button[class*="secondary"],
+body.theme-autumn button[class*="danger"],
+body.theme-autumn button[class*="accent"] {
+  background: linear-gradient(135deg, #a83240 0%, #8b2635 50%, #722030 100%) !important;
+  box-shadow:
+    0 4px 15px rgba(139, 38, 53, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Autumn Stats Cards */
+body.theme-autumn [class*="stat"],
+body.theme-autumn [class*="Stat"] {
+  background: linear-gradient(135deg, rgba(199, 93, 32, 0.9) 0%, rgba(180, 77, 20, 0.95) 100%) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 25px rgba(139, 90, 43, 0.25);
+}
+
+/* Autumn Header/Profile Cards */
+body.theme-autumn [class*="header"],
+body.theme-autumn [class*="profile"],
+body.theme-autumn [class*="Header"],
+body.theme-autumn [class*="Profile"] {
+  background: rgba(74, 55, 40, 0.9) !important;
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 40px rgba(74, 55, 40, 0.3);
 }
 
 /* =========================================
-     INVIERNO (WINTER) THEME ❄️
+     INVIERNO (WINTER) THEME ❄️ - Premium Edition
      ========================================= */
 body.theme-winter {
-  --color-brand-bg: #f0f8ff;
-  --color-brand-surface: #ffffff;
-  --color-brand-dark: #1e3a5f;
-  --color-brand-light: #90caf9;
-  --color-brand-primary: #4682b4;
-  /* Steel Blue */
-  --color-brand-secondary: #87ceeb;
-  /* Sky Blue */
-  --color-brand-accent: #b0c4de;
-  /* Light Steel Blue */
+  --color-brand-bg: #f0f9ff;
+  --color-brand-surface: rgba(255, 255, 255, 0.9);
+  --color-brand-dark: #0c4a6e;
+  --color-brand-light: #7dd3fc;
+  --color-brand-primary: #0284c7;
+  --color-brand-secondary: #38bdf8;
+  --color-brand-accent: #e0f2fe;
   --color-brand-text-on-primary: #ffffff;
+
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0f9ff 100%) !important;
+  min-height: 100vh;
+}
+
+/* Winter Glassmorphism Cards */
+body.theme-winter .glass-card,
+body.theme-winter [class*="card"],
+body.theme-winter [class*="Card"] {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(2, 132, 199, 0.15);
+  box-shadow: 0 8px 32px rgba(2, 132, 199, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* Winter Premium Buttons */
+body.theme-winter button:not(.flex-col):not([class*="icon"]),
+body.theme-winter [class*="btn"]:not(.flex-col),
+body.theme-winter [class*="Btn"]:not(.flex-col) {
+  background: linear-gradient(135deg, #38bdf8 0%, #0284c7 50%, #0369a1 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 0 4px 15px rgba(2, 132, 199, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: all 0.3s ease !important;
+}
+
+body.theme-winter button:not(.flex-col):hover {
+  background: linear-gradient(135deg, #7dd3fc 0%, #38bdf8 50%, #0284c7 100%) !important;
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Winter Icon Buttons */
+body.theme-winter button.flex-col {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+body.theme-winter button.flex-col > div {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(2, 132, 199, 0.1) !important;
+  box-shadow: 0 4px 15px rgba(2, 132, 199, 0.1) !important;
+}
+
+body.theme-winter button.flex-col:hover > div {
+  transform: scale(1.02);
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.15) !important;
+}
+
+/* Winter Secondary Buttons (light blue) */
+body.theme-winter button[class*="secondary"] {
+  background: linear-gradient(135deg, #7dd3fc 0%, #38bdf8 50%, #0ea5e9 100%) !important;
 }
 
 /* =========================================
@@ -191,14 +551,7 @@ input {
   }
 }
 
-body.theme-christmas button {
-  animation: jingle 4s ease-in-out infinite;
-}
-
-body.theme-christmas button:hover {
-  animation: sparkle 2s ease-in-out infinite;
-  box-shadow: 0 0 20px rgba(192, 57, 43, 0.6);
-}
+/* Christmas hover effects handled in theme section above */
 
 /* ===== HALLOWEEN ANIMATIONS ===== */
 @keyframes ghostFloat {
@@ -246,13 +599,7 @@ body.theme-christmas button:hover {
   animation: flicker 3s ease-in-out infinite;
 } */
 
-body.theme-halloween button {
-  animation: ghostFloat 3s ease-in-out infinite;
-}
-
-body.theme-halloween button:hover {
-  animation: spookyPulse 1.5s ease-in-out infinite;
-}
+/* Halloween hover effects handled in theme section above */
 
 /* ===== PRIMAVERA (SPRING) ANIMATIONS ===== */
 @keyframes bloom {
@@ -279,14 +626,7 @@ body.theme-halloween button:hover {
   }
 }
 
-body.theme-spring button {
-  animation: bloom 3s ease-in-out infinite;
-}
-
-body.theme-spring button:hover {
-  box-shadow: 0 0 15px rgba(255, 105, 180, 0.5);
-  animation: bloom 1.5s ease-in-out infinite;
-}
+/* Spring hover effects handled in theme section above */
 
 /* ===== VERANO (SUMMER) ANIMATIONS ===== */
 @keyframes sunPulse {
@@ -317,13 +657,7 @@ body.theme-spring button:hover {
   }
 }
 
-body.theme-summer button {
-  animation: heatWave 2s ease-in-out infinite;
-}
-
-body.theme-summer button:hover {
-  animation: sunPulse 1.5s ease-in-out infinite;
-}
+/* Summer hover effects handled in theme section above */
 
 /* ===== OTOÑO (AUTUMN) ANIMATIONS ===== */
 @keyframes leafFall {
@@ -348,13 +682,7 @@ body.theme-summer button:hover {
   }
 }
 
-body.theme-autumn button {
-  animation: leafFall 3s ease-in-out infinite alternate;
-}
-
-body.theme-autumn button:hover {
-  animation: autumnGlow 2s ease-in-out infinite;
-}
+/* Autumn hover effects handled in theme section above */
 
 /* ===== INVIERNO (WINTER) ANIMATIONS ===== */
 @keyframes frostShimmer {
@@ -381,13 +709,7 @@ body.theme-autumn button:hover {
   }
 }
 
-body.theme-winter button {
-  animation: iceFloat 4s ease-in-out infinite;
-}
-
-body.theme-winter button:hover {
-  animation: frostShimmer 2s ease-in-out infinite;
-}
+/* Winter hover effects handled in theme section above */
 
 /* ===== DEFAULT THEME SUBTLE ANIMATIONS ===== */
 @keyframes gentleFloat {
@@ -405,4 +727,40 @@ body.theme-winter button:hover {
 body:not(.theme-christmas):not(.theme-halloween):not(.theme-spring):not(.theme-summer):not(.theme-autumn):not(.theme-winter) button:hover {
   animation: gentleFloat 2s ease-in-out infinite;
   box-shadow: 0 4px 12px rgba(94, 123, 76, 0.2);
+}
+
+/* ===== NEW SUBTLE BACKGROUND ANIMATIONS ===== */
+@keyframes subtleFloat {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(10px, -10px);
+  }
+  50% {
+    transform: translate(20px, 5px);
+  }
+  75% {
+    transform: translate(5px, 15px);
+  }
+}
+
+@keyframes subtlePulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }

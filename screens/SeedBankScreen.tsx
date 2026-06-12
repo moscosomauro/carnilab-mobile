@@ -16,7 +16,7 @@ const IconSeed = () => (
 
 const SeedBankScreen: React.FC = () => {
     const navigate = useNavigate();
-    const { seedBank, addSeedBatch, updateSeedBatch, deleteSeedBatch, addPlant } = useApp();
+    const { seedBank, addSeedBatch, updateSeedBatch, deleteSeedBatch, addPlant, addAlert } = useApp();
     const [filter, setFilter] = useState<'all' | 'almacenada' | 'estratificando'>('all');
 
     // Modal States
@@ -78,6 +78,35 @@ const SeedBankScreen: React.FC = () => {
         });
 
         if (result) {
+            // Crear alerta para 1 semana antes del fin de estratificación
+            const oneWeekBefore = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+            // Solo crear alerta de "1 semana antes" si faltan más de 7 días
+            if (oneWeekBefore > now) {
+                await addAlert({
+                    tipo: 'estratificacion',
+                    planta: showStratifyModal.nombre,
+                    mensaje: `🌱 ¡Estás pronto a terminar el recorrido con tus semillas "${showStratifyModal.nombre}"! Faltan 7 días para completar la estratificación.`,
+                    prioridad: 'media',
+                    fecha: oneWeekBefore.toISOString(),
+                    completada: false,
+                    icon: 'ac_unit',
+                    color: '#3B82F6'
+                });
+            }
+
+            // Crear alerta para el día que termina la estratificación
+            await addAlert({
+                tipo: 'estratificacion_fin',
+                planta: showStratifyModal.nombre,
+                mensaje: `🎉 ¡Tus semillas "${showStratifyModal.nombre}" han completado la estratificación! Ya puedes sembrarlas.`,
+                prioridad: 'alta',
+                fecha: end.toISOString(),
+                completada: false,
+                icon: 'celebration',
+                color: '#10B981'
+            });
+
             // CERRAR MODAL EXPLÍCITAMENTE
             setShowStratifyModal(null);
         } else {

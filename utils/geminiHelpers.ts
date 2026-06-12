@@ -3,7 +3,7 @@
 import { GoogleGenAI } from "@google/genai";
 
 // ✅ API Keys movidas a variables de entorno por seguridad
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "AIzaSyDQn8rNeNKDQaW8PILkaOnFDuK3Kz1-VWI";
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const STABILITY_API_KEY = import.meta.env.VITE_STABILITY_API_KEY;
 
 if (!GEMINI_API_KEY || GEMINI_API_KEY === "your-gemini-api-key-here") {
@@ -64,19 +64,14 @@ export const analyzeCultivar = async (
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: {
-                parts: [
-                    { inlineData: { mimeType: 'image/jpeg', data: base64Data } },
-                    { text: prompt }
-                ]
-            },
-            config: {
-                responseMimeType: "application/json"
-            }
+            model: 'gemini-2.0-flash-lite',
+            contents: [
+                { inlineData: { mimeType: 'image/jpeg', data: base64Data } },
+                { text: prompt }
+            ]
         });
 
-        const text = response.text || "{}";
+        const text = response.text ?? "{}";
         const json = JSON.parse(text);
 
         return {
@@ -196,20 +191,15 @@ export const generateGeneticScenarios = async (
         `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: {
-                parts: [
-                    { inlineData: { mimeType: 'image/jpeg', data: motherBase64 } },
-                    { inlineData: { mimeType: 'image/jpeg', data: fatherBase64 } },
-                    { text: prompt }
-                ]
-            },
-            config: {
-                responseMimeType: "application/json"
-            }
+            model: 'gemini-2.0-flash-lite',
+            contents: [
+                { inlineData: { mimeType: 'image/jpeg', data: motherBase64 } },
+                { inlineData: { mimeType: 'image/jpeg', data: fatherBase64 } },
+                { text: prompt }
+            ]
         });
 
-        const text = response.text || "{}";
+        const text = response.text ?? "{}";
         const json = JSON.parse(text);
 
         return {

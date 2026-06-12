@@ -44,7 +44,7 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = ({ children }) => {
                         </div>
                         <div>
                             <h1 className="text-xl font-black text-white tracking-tight">CarniLab</h1>
-                            <p className="text-[10px] font-bold text-[#D9C9A2] uppercase tracking-[0.2em]">{t('layout.slogan')}</p>
+                            <p className="text-[10px] font-bold text-[#F2EDD8] uppercase tracking-[0.2em]">{t('layout.slogan')}</p>
                         </div>
                     </div>
 
@@ -57,13 +57,13 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = ({ children }) => {
                                     key={item.path}
                                     onClick={() => navigate(item.path)}
                                     className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group ${isActive
-                                        ? 'bg-[#D9C9A2] text-[#4A3325] shadow-lg shadow-black/20'
-                                        : 'text-[#D9C9A2]/60 hover:bg-white/10 hover:text-white'
+                                        ? 'bg-brand-primary text-white shadow-lg shadow-brand-primary/20'
+                                        : 'text-white/60 hover:bg-white/10 hover:text-white'
                                         }`}
                                 >
                                     <Icon
                                         name={item.icon}
-                                        className={`text-4xl ${isActive ? 'text-[#4A3325]' : 'group-hover:scale-110 transition-transform'}`}
+                                        className={`text-4xl ${isActive ? 'text-white' : 'group-hover:scale-110 transition-transform'}`}
                                     />
                                     <span className="font-bold text-sm">{item.name}</span>
                                 </button>
@@ -84,8 +84,8 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = ({ children }) => {
                         <div className="flex-1 min-w-0">
                             <p className="text-xs font-black text-white truncate uppercase">{user.label}</p>
                             <div className="flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#5E7B4C] animate-pulse" />
-                                <p className="text-[9px] font-bold text-[#D9C9A2] uppercase opacity-60 tracking-wider">
+                                <span className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse" />
+                                <p className="text-[9px] font-bold text-[#F2EDD8] uppercase opacity-60 tracking-wider">
                                     {t('layout.plan')} {user.plan}
                                 </p>
                             </div>

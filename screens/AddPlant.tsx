@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useApp } from '../context/AppContext';
+import { useApp, withTimeout } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { hasAccess } from '../utils/planHelpers';
 import { Plant } from '../types';
@@ -12,6 +12,20 @@ import { PlanComparison } from '../components/PlanComparison';
 import { PlantSchema, validateData } from '../utils/validationSchemas';
 
 import { SpeciesIcon } from '../components/SpeciesIcon';
+
+const PREDEFINED_SPECIES = new Set([
+  "Dionaea muscipula", "Dionaea muscipula 'Akai Ryu'", "Dionaea muscipula 'B52'", "Dionaea muscipula 'King Henry'", "Dionaea muscipula 'Dentate'",
+  "Nepenthes alata", "Nepenthes ventricosa", "Nepenthes rafflesiana", "Nepenthes mirabilis", "Nepenthes ampullaria", "Nepenthes bicalcarata", "Nepenthes rajah", "Nepenthes truncata", "Nepenthes hamata", "Nepenthes lowii",
+  "Sarracenia purpurea", "Sarracenia flava", "Sarracenia leucophylla", "Sarracenia rubra", "Sarracenia psittacina", "Sarracenia minor", "Sarracenia oreophila",
+  "Drosera capensis", "Drosera aliciae", "Drosera binata", "Drosera spatulata", "Drosera rotundifolia", "Drosera adelae", "Drosera burmannii", "Drosera regia",
+  "Pinguicula moranensis", "Pinguicula agnata", "Pinguicula esseriana", "Pinguicula grandiflora", "Pinguicula cyclosecta",
+  "Utricularia gibba", "Utricularia sandersonii", "Utricularia livida", "Utricularia bisquamata", "Utricularia graminifolia",
+  "Cephalotus follicularis",
+  "Heliamphora nutans", "Heliamphora minor", "Heliamphora heterodoxa",
+  "Darlingtonia californica",
+  "Byblis liniflora", "Byblis gigantea",
+  "Híbrido Sarracenia", "Híbrido Nepenthes", "Híbrido Drosera", "Otra especie"
+]);
 
 // --- CUSTOM SVG ICONS (Kept existing ones plus new ones) ---
 
@@ -89,6 +103,18 @@ const AddPlant: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [savingStep, setSavingStep] = useState(''); // Para mostrar en qué paso estamos
   const [showPlans, setShowPlans] = useState(false);
+  const [isCustomSpecies, setIsCustomSpecies] = useState(false);
+
+  // Get unique custom species from user's plants
+  const customSpecies = React.useMemo(() => {
+    const speciesSet = new Set<string>();
+    plants.forEach(p => {
+      if (p.especie && !PREDEFINED_SPECIES.has(p.especie)) {
+        speciesSet.add(p.especie);
+      }
+    });
+    return Array.from(speciesSet);
+  }, [plants]);
 
   useEffect(() => {
     if (editingPlant) {
@@ -295,10 +321,13 @@ const AddPlant: React.FC = () => {
         setSavingStep('Sincronizando...');
         try {
           // Strategy: Replace all (Delete all for this plant, insert all current)
-          const { error: deleteError } = await supabase
-            .from('plant_images')
-            .delete()
-            .eq('plant_id', targetPlantId);
+          const { error: deleteError } = await withTimeout(
+            supabase
+              .from('plant_images')
+              .delete()
+              .eq('plant_id', targetPlantId),
+            10000
+          ) as any;
 
           if (deleteError) {
             console.warn('[AddPlant] Error borrando plant_images (puede que la tabla no exista):', deleteError);
@@ -316,9 +345,12 @@ const AddPlant: React.FC = () => {
               owner_key: user.key
             }));
 
-            const { error: insertError } = await supabase
-              .from('plant_images')
-              .insert(recordsToInsert);
+            const { error: insertError } = await withTimeout(
+              supabase
+                .from('plant_images')
+                .insert(recordsToInsert),
+              10000
+            ) as any;
 
             if (insertError) {
               console.warn('[AddPlant] Error insertando plant_images:', insertError);
@@ -474,113 +506,155 @@ const AddPlant: React.FC = () => {
           </div>
           <div className="flex flex-col gap-3">
             <div className="flex gap-3.5 items-center">
-              <select
-                value={formData.especie}
-                onChange={(e) => handleChange('especie', e.target.value)}
-                className="flex-1 h-12 rounded-full bg-[#EFEBE4] border border-white px-6 text-[14px] font-bold text-[#2E2E2E] shadow-sm outline-none appearance-none cursor-pointer"
-                style={{
-                  backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%238E877F\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right 1rem center',
-                }}
-              >
-                <option value="">{t('addPlant.speciesSelect')}</option>
+              {!isCustomSpecies ? (
+                <select
+                  value={formData.especie}
+                  onChange={(e) => {
+                    if (e.target.value === '--new--') {
+                      setIsCustomSpecies(true);
+                      handleChange('especie', '');
+                    } else {
+                      handleChange('especie', e.target.value);
+                    }
+                  }}
+                  className="flex-1 h-12 rounded-full bg-[#EFEBE4] border border-white px-6 text-[14px] font-bold text-[#2E2E2E] shadow-sm outline-none appearance-none cursor-pointer"
+                  style={{
+                    backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%238E877F\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 1rem center',
+                  }}
+                >
+                  <option value="">{t('addPlant.speciesSelect')}</option>
+                  
+                  <option value="--new--" className="font-bold text-[#6B8E23]">✨ Añadir propia especie o híbrido...</option>
 
-                {/* Dionaea (Venus Atrapamoscas) */}
-                <optgroup label="Dionaea (Venus Atrapamoscas)">
-                  <option value="Dionaea muscipula">Dionaea muscipula (Clásica)</option>
-                  <option value="Dionaea muscipula 'Akai Ryu'">Dionaea muscipula 'Akai Ryu' (Dragón Rojo)</option>
-                  <option value="Dionaea muscipula 'B52'">Dionaea muscipula 'B52'</option>
-                  <option value="Dionaea muscipula 'King Henry'">Dionaea muscipula 'King Henry'</option>
-                  <option value="Dionaea muscipula 'Dentate'">Dionaea muscipula 'Dentate'</option>
-                </optgroup>
+                  {customSpecies.length > 0 && (
+                    <optgroup label="Mis Especies e Híbridos">
+                      {customSpecies.map(sp => (
+                        <option key={sp} value={sp}>{sp}</option>
+                      ))}
+                    </optgroup>
+                  )}
 
-                {/* Nepenthes (Plantas Jarro) */}
-                <optgroup label="Nepenthes (Plantas Jarro)">
-                  <option value="Nepenthes alata">Nepenthes alata</option>
-                  <option value="Nepenthes ventricosa">Nepenthes ventricosa</option>
-                  <option value="Nepenthes rafflesiana">Nepenthes rafflesiana</option>
-                  <option value="Nepenthes mirabilis">Nepenthes mirabilis</option>
-                  <option value="Nepenthes ampullaria">Nepenthes ampullaria</option>
-                  <option value="Nepenthes bicalcarata">Nepenthes bicalcarata</option>
-                  <option value="Nepenthes rajah">Nepenthes rajah (Gigante)</option>
-                  <option value="Nepenthes truncata">Nepenthes truncata</option>
-                  <option value="Nepenthes hamata">Nepenthes hamata</option>
-                  <option value="Nepenthes lowii">Nepenthes lowii</option>
-                </optgroup>
+                  {/* Dionaea (Venus Atrapamoscas) */}
+                  <optgroup label="Dionaea (Venus Atrapamoscas)">
+                    <option value="Dionaea muscipula">Dionaea muscipula (Clásica)</option>
+                    <option value="Dionaea muscipula 'Akai Ryu'">Dionaea muscipula 'Akai Ryu' (Dragón Rojo)</option>
+                    <option value="Dionaea muscipula 'B52'">Dionaea muscipula 'B52'</option>
+                    <option value="Dionaea muscipula 'King Henry'">Dionaea muscipula 'King Henry'</option>
+                    <option value="Dionaea muscipula 'Dentate'">Dionaea muscipula 'Dentate'</option>
+                  </optgroup>
 
-                {/* Sarracenia (Trompetas) */}
-                <optgroup label="Sarracenia (Trompetas)">
-                  <option value="Sarracenia purpurea">Sarracenia purpurea (Púrpura)</option>
-                  <option value="Sarracenia flava">Sarracenia flava (Amarilla)</option>
-                  <option value="Sarracenia leucophylla">Sarracenia leucophylla (Blanca)</option>
-                  <option value="Sarracenia rubra">Sarracenia rubra (Roja)</option>
-                  <option value="Sarracenia psittacina">Sarracenia psittacina (Loro)</option>
-                  <option value="Sarracenia minor">Sarracenia minor</option>
-                  <option value="Sarracenia oreophila">Sarracenia oreophila</option>
-                </optgroup>
+                  {/* Nepenthes (Plantas Jarro) */}
+                  <optgroup label="Nepenthes (Plantas Jarro)">
+                    <option value="Nepenthes alata">Nepenthes alata</option>
+                    <option value="Nepenthes ventricosa">Nepenthes ventricosa</option>
+                    <option value="Nepenthes rafflesiana">Nepenthes rafflesiana</option>
+                    <option value="Nepenthes mirabilis">Nepenthes mirabilis</option>
+                    <option value="Nepenthes ampullaria">Nepenthes ampullaria</option>
+                    <option value="Nepenthes bicalcarata">Nepenthes bicalcarata</option>
+                    <option value="Nepenthes rajah">Nepenthes rajah (Gigante)</option>
+                    <option value="Nepenthes truncata">Nepenthes truncata</option>
+                    <option value="Nepenthes hamata">Nepenthes hamata</option>
+                    <option value="Nepenthes lowii">Nepenthes lowii</option>
+                  </optgroup>
 
-                {/* Drosera (Rocío de Sol) */}
-                <optgroup label="Drosera (Rocío de Sol)">
-                  <option value="Drosera capensis">Drosera capensis (Cabo)</option>
-                  <option value="Drosera aliciae">Drosera aliciae</option>
-                  <option value="Drosera binata">Drosera binata (Bifurcada)</option>
-                  <option value="Drosera spatulata">Drosera spatulata</option>
-                  <option value="Drosera rotundifolia">Drosera rotundifolia</option>
-                  <option value="Drosera adelae">Drosera adelae</option>
-                  <option value="Drosera burmannii">Drosera burmannii</option>
-                  <option value="Drosera regia">Drosera regia (Reina)</option>
-                </optgroup>
+                  {/* Sarracenia (Trompetas) */}
+                  <optgroup label="Sarracenia (Trompetas)">
+                    <option value="Sarracenia purpurea">Sarracenia purpurea (Púrpura)</option>
+                    <option value="Sarracenia flava">Sarracenia flava (Amarilla)</option>
+                    <option value="Sarracenia leucophylla">Sarracenia leucophylla (Blanca)</option>
+                    <option value="Sarracenia rubra">Sarracenia rubra (Roja)</option>
+                    <option value="Sarracenia psittacina">Sarracenia psittacina (Loro)</option>
+                    <option value="Sarracenia minor">Sarracenia minor</option>
+                    <option value="Sarracenia oreophila">Sarracenia oreophila</option>
+                  </optgroup>
 
-                {/* Pinguicula (Grasilla) */}
-                <optgroup label="Pinguicula (Grasilla)">
-                  <option value="Pinguicula moranensis">Pinguicula moranensis</option>
-                  <option value="Pinguicula agnata">Pinguicula agnata</option>
-                  <option value="Pinguicula esseriana">Pinguicula esseriana</option>
-                  <option value="Pinguicula grandiflora">Pinguicula grandiflora</option>
-                  <option value="Pinguicula cyclosecta">Pinguicula cyclosecta</option>
-                </optgroup>
+                  {/* Drosera (Rocío de Sol) */}
+                  <optgroup label="Drosera (Rocío de Sol)">
+                    <option value="Drosera capensis">Drosera capensis (Cabo)</option>
+                    <option value="Drosera aliciae">Drosera aliciae</option>
+                    <option value="Drosera binata">Drosera binata (Bifurcada)</option>
+                    <option value="Drosera spatulata">Drosera spatulata</option>
+                    <option value="Drosera rotundifolia">Drosera rotundifolia</option>
+                    <option value="Drosera adelae">Drosera adelae</option>
+                    <option value="Drosera burmannii">Drosera burmannii</option>
+                    <option value="Drosera regia">Drosera regia (Reina)</option>
+                  </optgroup>
 
-                {/* Utricularia (Vejiga) */}
-                <optgroup label="Utricularia (Vejiga)">
-                  <option value="Utricularia gibba">Utricularia gibba</option>
-                  <option value="Utricularia sandersonii">Utricularia sandersonii (Conejo Azul)</option>
-                  <option value="Utricularia livida">Utricularia livida</option>
-                  <option value="Utricularia bisquamata">Utricularia bisquamata</option>
-                  <option value="Utricularia graminifolia">Utricularia graminifolia</option>
-                </optgroup>
+                  {/* Pinguicula (Grasilla) */}
+                  <optgroup label="Pinguicula (Grasilla)">
+                    <option value="Pinguicula moranensis">Pinguicula moranensis</option>
+                    <option value="Pinguicula agnata">Pinguicula agnata</option>
+                    <option value="Pinguicula esseriana">Pinguicula esseriana</option>
+                    <option value="Pinguicula grandiflora">Pinguicula grandiflora</option>
+                    <option value="Pinguicula cyclosecta">Pinguicula cyclosecta</option>
+                  </optgroup>
 
-                {/* Cephalotus (Jarro Australiano) */}
-                <optgroup label="Cephalotus">
-                  <option value="Cephalotus follicularis">Cephalotus follicularis (Jarro Australiano)</option>
-                </optgroup>
+                  {/* Utricularia (Vejiga) */}
+                  <optgroup label="Utricularia (Vejiga)">
+                    <option value="Utricularia gibba">Utricularia gibba</option>
+                    <option value="Utricularia sandersonii">Utricularia sandersonii (Conejo Azul)</option>
+                    <option value="Utricularia livida">Utricularia livida</option>
+                    <option value="Utricularia bisquamata">Utricularia bisquamata</option>
+                    <option value="Utricularia graminifolia">Utricularia graminifolia</option>
+                  </optgroup>
 
-                {/* Heliamphora (Jarro de Sol) */}
-                <optgroup label="Heliamphora (Jarro de Sol)">
-                  <option value="Heliamphora nutans">Heliamphora nutans</option>
-                  <option value="Heliamphora minor">Heliamphora minor</option>
-                  <option value="Heliamphora heterodoxa">Heliamphora heterodoxa</option>
-                </optgroup>
+                  {/* Cephalotus (Jarro Australiano) */}
+                  <optgroup label="Cephalotus">
+                    <option value="Cephalotus follicularis">Cephalotus follicularis (Jarro Australiano)</option>
+                  </optgroup>
 
-                {/* Darlingtonia (Planta Cobra) */}
-                <optgroup label="Darlingtonia">
-                  <option value="Darlingtonia californica">Darlingtonia californica (Planta Cobra)</option>
-                </optgroup>
+                  {/* Heliamphora (Jarro de Sol) */}
+                  <optgroup label="Heliamphora (Jarro de Sol)">
+                    <option value="Heliamphora nutans">Heliamphora nutans</option>
+                    <option value="Heliamphora minor">Heliamphora minor</option>
+                    <option value="Heliamphora heterodoxa">Heliamphora heterodoxa</option>
+                  </optgroup>
 
-                {/* Byblis (Arcoíris) */}
-                <optgroup label="Byblis (Arcoíris)">
-                  <option value="Byblis liniflora">Byblis liniflora</option>
-                  <option value="Byblis gigantea">Byblis gigantea</option>
-                </optgroup>
+                  {/* Darlingtonia (Planta Cobra) */}
+                  <optgroup label="Darlingtonia">
+                    <option value="Darlingtonia californica">Darlingtonia californica (Planta Cobra)</option>
+                  </optgroup>
 
-                {/* Otras / Híbridos */}
-                <optgroup label="Otras / Híbridos">
-                  <option value="Híbrido Sarracenia">Híbrido Sarracenia</option>
-                  <option value="Híbrido Nepenthes">Híbrido Nepenthes</option>
-                  <option value="Híbrido Drosera">Híbrido Drosera</option>
-                  <option value="Otra especie">Otra especie</option>
-                </optgroup>
-              </select>
+                  {/* Byblis (Arcoíris) */}
+                  <optgroup label="Byblis (Arcoíris)">
+                    <option value="Byblis liniflora">Byblis liniflora</option>
+                    <option value="Byblis gigantea">Byblis gigantea</option>
+                  </optgroup>
+
+                  {/* Otras / Híbridos */}
+                  <optgroup label="Otras / Híbridos">
+                    <option value="Híbrido Sarracenia">Híbrido Sarracenia</option>
+                    <option value="Híbrido Nepenthes">Híbrido Nepenthes</option>
+                    <option value="Híbrido Drosera">Híbrido Drosera</option>
+                    <option value="Otra especie">Otra especie</option>
+                  </optgroup>
+                </select>
+              ) : (
+                <div className="flex-1 flex gap-2 items-center">
+                  <input
+                    autoFocus
+                    type="text"
+                    value={formData.especie}
+                    onChange={(e) => handleChange('especie', e.target.value)}
+                    placeholder="Escribe la especie o híbrido..."
+                    className="flex-1 h-12 rounded-full bg-[#EFEBE4] border border-[#6B8E23] px-6 text-[14px] font-bold text-[#2E2E2E] shadow-sm outline-none placeholder-[#8E877F]/60 focus:ring-2 focus:ring-[#6B8E23]/20"
+                  />
+                  <button 
+                    onClick={() => {
+                      setIsCustomSpecies(false);
+                      handleChange('especie', '');
+                    }}
+                    className="w-12 h-12 rounded-full bg-white border border-[#8E877F]/20 flex items-center justify-center text-[#8E877F] active:scale-95 transition-transform"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                </div>
+              )}
 
               {/* Preview Icon */}
               {formData.especie && (

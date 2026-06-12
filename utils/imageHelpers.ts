@@ -1,87 +1,15 @@
-import { supabase } from '../supabaseClient';
-
-// Simple UUID generator to avoid external dependencies issues
-const generateId = () => {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
-};
-
 // Helper para delay entre operaciones
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // ============================================
-// NUEVA FUNCIÓN: Comprimir imagen directamente a Blob (más eficiente)
+// CLOUDINARY CONFIGURATION
 // ============================================
-export const compressImageToBlob = (file: File): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-        const objectUrl = URL.createObjectURL(file);
-        const img = new Image();
+const CLOUD_NAME = 'dmmrl02uc';
+const UPLOAD_PRESET = 'carnilab_uploads';
+const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
 
-        const cleanup = () => {
-            URL.revokeObjectURL(objectUrl);
-            img.onload = null;
-            img.onerror = null;
-        };
 
-        img.onload = () => {
-            try {
-                const canvas = document.createElement('canvas');
-                // 800px es buen balance entre calidad y tamaño
-                const MAX_SIZE = 800;
-                let width = img.width;
-                let height = img.height;
 
-                // Escalar proporcionalmente
-                if (width > height && width > MAX_SIZE) {
-                    height = Math.round(height * (MAX_SIZE / width));
-                    width = MAX_SIZE;
-                } else if (height > MAX_SIZE) {
-                    width = Math.round(width * (MAX_SIZE / height));
-                    height = MAX_SIZE;
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-
-                const ctx = canvas.getContext('2d');
-                if (!ctx) {
-                    cleanup();
-                    reject(new Error("Could not get canvas context"));
-                    return;
-                }
-
-                ctx.drawImage(img, 0, 0, width, height);
-
-                // Usar toBlob directamente (más eficiente que toDataURL)
-                canvas.toBlob(
-                    (blob) => {
-                        // Limpiar canvas
-                        canvas.width = 0;
-                        canvas.height = 0;
-                        cleanup();
-
-                        if (blob) {
-                            resolve(blob);
-                        } else {
-                            reject(new Error("No se pudo crear el blob"));
-                        }
-                    },
-                    'image/jpeg',
-                    0.7 // Calidad 0.7 = buen balance
-                );
-            } catch (e) {
-                cleanup();
-                reject(e);
-            }
-        };
-
-        img.onerror = () => {
-            cleanup();
-            reject(new Error(`No se pudo cargar la imagen: ${file.name}`));
-        };
-
-        img.src = objectUrl;
-    });
-};
 
 // Función legacy para preview (mantener compatibilidad)
 export const compressImage = (file: File): Promise<string> => {
@@ -153,7 +81,7 @@ interface PendingImage {
 }
 
 // Guardar imagen pendiente para sync posterior
-const savePendingImage = (base64: string, userId: string): string => {
+export const savePendingImage = (base64: string, userId: string): string => {
     try {
         const pending = JSON.parse(localStorage.getItem(PENDING_IMAGES_KEY) || '[]') as PendingImage[];
         const id = `pending_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -196,15 +124,17 @@ export const syncPendingImages = async (): Promise<number> => {
 
     for (const img of pending) {
         try {
-            const res = await fetch(img.base64);
-            const blob = await res.blob();
-            const fileName = `${img.userId}/${generateId()}.jpg`;
+            const formData = new FormData();
+            formData.append('file', img.base64);
+            formData.append('upload_preset', UPLOAD_PRESET);
+            formData.append('folder', `carnilab/${img.userId}`);
 
-            const { error } = await supabase.storage
-                .from('plant-images')
-                .upload(fileName, blob, { contentType: 'image/jpeg', upsert: false });
+            const response = await fetch(CLOUDINARY_URL, {
+                method: 'POST',
+                body: formData,
+            });
 
-            if (!error) {
+            if (response.ok) {
                 synced++;
                 const updated = getPendingImages().filter(p => p.id !== img.id);
                 localStorage.setItem(PENDING_IMAGES_KEY, JSON.stringify(updated));
@@ -223,116 +153,45 @@ export const syncPendingImages = async (): Promise<number> => {
 // ============================================
 // FUNCIÓN PRINCIPAL DE UPLOAD CON REINTENTOS
 // ============================================
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000; // 1 segundo entre reintentos
 
 export const uploadImage = async (file: File, userId: string): Promise<string | null> => {
-    console.log('[uploadImage] Iniciando subida de:', file.name, '(', Math.round(file.size / 1024), 'KB)');
+    console.log('[uploadImage] Iniciando subida a Cloudinary de:', file.name, '(', Math.round(file.size / 1024), 'KB)');
 
-    // Verificar si estamos offline
+    // Si estamos offline, ya no intentamos comprimir porque colapsa la app.
+    // Simplemente lanzamos un error para que el usuario sepa.
     if (!navigator.onLine) {
-        console.log('[uploadImage] Sin conexión, comprimiendo para guardar offline...');
-        try {
-            const base64 = await compressImage(file);
-            return savePendingImage(base64, userId);
-        } catch (e) {
-            console.error('[uploadImage] Error comprimiendo offline:', e);
-            return null;
-        }
+        console.warn('[uploadImage] Sin conexión. No se pueden subir fotos offline.');
+        throw new Error("Sin conexión a internet. No se pueden subir fotos pesadas en modo offline.");
     }
 
-    // 1. Comprimir imagen directamente a Blob
-    let blob: Blob;
-    try {
-        console.log('[uploadImage] Comprimiendo imagen...');
-        blob = await compressImageToBlob(file);
-        console.log('[uploadImage] Comprimida a:', Math.round(blob.size / 1024), 'KB');
-    } catch (e) {
-        console.error('[uploadImage] Error comprimiendo:', e);
-        return null;
-    }
-
-    // 2. Intentar subir con reintentos
-    const fileName = `${userId}/${generateId()}.jpg`;
-    let lastError: any = null;
-
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-        try {
-            console.log(`[uploadImage] Intento ${attempt}/${MAX_RETRIES}...`);
-
-            const { error: uploadError } = await supabase.storage
-                .from('plant-images')
-                .upload(fileName, blob, {
-                    contentType: 'image/jpeg',
-                    upsert: false
-                });
-
-            if (!uploadError) {
-                // ¡Éxito!
-                console.log('[uploadImage] Subida exitosa en intento', attempt);
-                const { data } = supabase.storage
-                    .from('plant-images')
-                    .getPublicUrl(fileName);
-
-                return data.publicUrl;
-            }
-
-            // Error de Supabase
-            lastError = uploadError;
-            console.warn(`[uploadImage] Error intento ${attempt}:`, uploadError.message);
-
-            // Si es error de duplicado, generar nuevo nombre
-            if (uploadError.message?.includes('Duplicate') || uploadError.message?.includes('already exists')) {
-                console.log('[uploadImage] Archivo duplicado, generando nuevo nombre...');
-                const newFileName = `${userId}/${generateId()}_${attempt}.jpg`;
-
-                const { error: retryError } = await supabase.storage
-                    .from('plant-images')
-                    .upload(newFileName, blob, {
-                        contentType: 'image/jpeg',
-                        upsert: false
-                    });
-
-                if (!retryError) {
-                    const { data } = supabase.storage
-                        .from('plant-images')
-                        .getPublicUrl(newFileName);
-                    return data.publicUrl;
-                }
-            }
-
-            // Esperar antes del siguiente intento
-            if (attempt < MAX_RETRIES) {
-                await delay(RETRY_DELAY * attempt); // Delay progresivo
-            }
-
-        } catch (e: any) {
-            lastError = e;
-            console.warn(`[uploadImage] Excepción intento ${attempt}:`, e.message);
-
-            if (attempt < MAX_RETRIES) {
-                await delay(RETRY_DELAY * attempt);
-            }
-        }
-    }
-
-    // Todos los intentos fallaron - guardar offline
-    console.warn('[uploadImage] Todos los intentos fallaron. Error:', lastError?.message);
-    console.log('[uploadImage] Guardando offline como fallback...');
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', UPLOAD_PRESET);
+    formData.append('folder', `carnilab/${userId}`);
 
     try {
-        // Convertir blob a base64 para guardar offline
-        const reader = new FileReader();
-        const base64 = await new Promise<string>((resolve, reject) => {
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
+        console.log('[uploadImage] Enviando a Cloudinary...');
+        const response = await fetch(CLOUDINARY_URL, {
+            method: 'POST',
+            body: formData,
         });
 
-        return savePendingImage(base64, userId);
-    } catch (e) {
-        console.error('[uploadImage] Error guardando offline:', e);
-        return null;
+        if (!response.ok) {
+            const errBody = await response.text();
+            throw new Error(`Cloudinary Error: ${response.status} - ${errBody}`);
+        }
+
+        const data = await response.json();
+        
+        // Optimizar URL agregando f_auto,q_auto para que funcione en todos los navegadores (soluciona el problema de fotos de iPhone .heic que no se ven)
+        const optimizedUrl = data.secure_url.replace('/upload/', '/upload/f_auto,q_auto/');
+        console.log('[uploadImage] Subida exitosa:', optimizedUrl);
+        
+        return optimizedUrl;
+
+    } catch (e: any) {
+        console.error('[uploadImage] Falló subida a Cloudinary. Error:', e.message);
+        throw e; // Propagar el error para que AddPlant lo maneje y no se quede pegado
     }
 };
 

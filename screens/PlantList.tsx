@@ -231,6 +231,7 @@ const PlantList: React.FC = () => {
                 <img
                   src={planta.imagen || 'https://images.unsplash.com/photo-1596238681789-29437f8623b3?w=400'}
                   alt={planta.nombre}
+                  loading="lazy"
                   className="w-full h-full object-cover"
                 />
                 <button

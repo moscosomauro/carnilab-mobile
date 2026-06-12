@@ -8,12 +8,14 @@ import { useTheme } from "../context/ThemeContext";
 import { hasAccess } from "../utils/planHelpers";
 import { PlanComparison } from "../components/PlanComparison";
 import { Icon } from "../components/Icon";
+import { Pencil } from "lucide-react";
 
 // ---------- UI helpers ----------
 
 // Asset Icon Helper
 import { AssetIcon } from "../components/AssetIcon";
 import { SmartDashboardWidget } from "../components/SmartDashboardWidget";
+
 
 type MenuItem = {
   title: string;
@@ -35,6 +37,8 @@ const Dashboard = () => {
   const [newProfileName, setNewProfileName] = useState(user?.label || "");
   const [showPlans, setShowPlans] = useState(false);
 
+
+  // Get additional data for badges
   useEffect(() => {
     // Attempt to subscribe to push notifications automatically
     if (user) {
@@ -76,7 +80,7 @@ const Dashboard = () => {
     { title: t('dashboard.menu.climate'), icon: <AssetIcon name="icon-climate" size={48} />, bg: "var(--color-brand-accent)", path: "/climate", plan: "pro" },
     { title: t('dashboard.menu.alerts'), icon: <AssetIcon name="icon-alerts" size={48} />, bg: "var(--color-brand-accent)", path: "/alerts", plan: "basic", badge: pendingAlerts },
     { title: t('dashboard.menu.backup'), icon: <AssetIcon name="icon-backup" size={48} />, bg: "var(--color-brand-secondary)", path: "/backup", plan: "basic" },
-    { title: t('dashboard.menu.calculator'), icon: <AssetIcon name="icon-genlab" size={48} />, bg: "var(--color-brand-accent)", path: "/calculator", plan: "pro" },
+    { title: t('dashboard.menu.calculator'), icon: <AssetIcon name="icon-genlab" size={48} />, bg: "var(--color-brand-accent)", path: "/lab", plan: "pro" },
     ...(user?.isAdmin ? [{
       title: t('dashboard.menu.priceControl'),
       icon: <Icon name="payments" className="text-2xl text-emerald-800" />,
@@ -132,20 +136,20 @@ const Dashboard = () => {
           <div className="w-24 h-24 rounded-3xl bg-white flex items-center justify-center shadow-lg shadow-black/5 mb-3 border border-gray-50 overflow-hidden">
             <img src={currentLogo} alt="CarniLab Logo" className="w-20 h-20 object-contain scale-110" />
           </div>
-          <h1 className="text-3xl font-bold text-[#2E2E2E] tracking-tight">
+          <h1 className="text-3xl font-bold text-brand-dark tracking-tight">
             CarniLab
           </h1>
-          <p className="text-xs font-bold text-[#6B8E23] uppercase tracking-[0.2em]">
+          <p className="text-xs font-bold text-brand-accent uppercase tracking-[0.2em]">
             {t('dashboard.slogan')}
           </p>
         </div>
 
         {/* PROFILE CARD */}
         <div
-          className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl shadow-soft
-                             border border-white/60 dark:border-slate-700 flex items-center gap-4 px-4 py-3 mb-8 lg:px-8 lg:py-6 rounded-blob"
+          className="bg-brand-surface/90 backdrop-blur-xl shadow-soft
+                             border border-brand-light/20 flex items-center gap-4 px-4 py-3 mb-8 lg:px-8 lg:py-6 rounded-blob"
         >
-          <div className="w-20 h-20 rounded-full border-4 border-white shadow-md overflow-hidden bg-[#F5F1EB] flex items-center justify-center">
+          <div className="w-20 h-20 rounded-full border-4 border-brand-surface shadow-md overflow-hidden bg-brand-bg/50 flex items-center justify-center">
             {user?.avatar_url ? (
               <img
                 src={user.avatar_url}
@@ -153,48 +157,48 @@ const Dashboard = () => {
                 alt="Profile"
               />
             ) : (
-              <span className="text-2xl font-black text-[#8E877F] opacity-50">{user?.label?.charAt(0).toUpperCase()}</span>
+              <span className="text-2xl font-black text-brand-dark/40">{user?.label?.charAt(0).toUpperCase()}</span>
             )}
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-[22px] font-bold text-[#2E2E2E] dark:text-white">
+              <h2 className="text-[22px] font-bold text-brand-dark">
                 {user?.label || "Mauro"}
               </h2>
-              <button onClick={() => setIsEditingProfile(true)} className="text-[#A5A29D] hover:text-[#6B8E23] transition-colors">
-                <span className="material-symbols-rounded text-base">edit</span>
+              <button onClick={() => setIsEditingProfile(true)} className="opacity-60 hover:opacity-100 transition-opacity">
+                <Pencil size={14} className="text-brand-dark" />
               </button>
             </div>
-            <div className="text-[11px] uppercase tracking-widest text-[#8E877F] dark:text-slate-400 font-bold flex items-center gap-1.5 mt-0.5">
-              <span className="text-[#6B8E23] opacity-60">🌿</span>
+            <div className="text-[11px] uppercase tracking-widest text-brand-dark/60 font-bold flex items-center gap-1.5 mt-0.5">
+              <span className="text-brand-accent opacity-60">🌿</span>
               <span>{t('dashboard.ownerTitle')}</span>
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-4 gap-4 mb-4 lg:grid-cols-8 lg:mb-8">
-          <button onClick={() => handleNavigation('/calculator', 'pro')} className="flex flex-col items-center gap-2">
-            <div className="w-20 h-20 lg:w-28 lg:h-28 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden relative">
+          <button onClick={() => handleNavigation('/lab', 'pro')} className="flex flex-col items-center gap-2">
+            <div className="w-20 h-20 lg:w-28 lg:h-28 rounded-2xl bg-brand-surface flex items-center justify-center shadow-sm border border-brand-light/15 overflow-hidden relative">
               <AssetIcon name="icon-genlab" size={80} className="lg:scale-125" />
               {!hasAccess(user?.plan, 'pro') && (
-                <div className="absolute inset-0 bg-white/60 dark:bg-black/60 flex items-center justify-center">
-                  <Icon name="lock" className="text-slate-500" />
+                <div className="absolute inset-0 bg-brand-surface/60 flex items-center justify-center">
+                  <Icon name="lock" className="text-brand-dark/50" />
                 </div>
               )}
             </div>
-            <span className="text-[10px] lg:text-xs font-bold text-[#4A5D4F] dark:text-slate-300 leading-tight text-center">{t('dashboard.genLab')}</span>
+            <span className="text-[10px] lg:text-xs font-bold text-brand-dark/80 leading-tight text-center">{t('dashboard.genLab')}</span>
           </button>
 
           <button onClick={() => handleNavigation('/qr-design', 'elite')} className="flex flex-col items-center gap-2">
-            <div className="w-20 h-20 lg:w-28 lg:h-28 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden relative">
+            <div className="w-20 h-20 lg:w-28 lg:h-28 rounded-2xl bg-brand-surface flex items-center justify-center shadow-sm border border-brand-light/15 overflow-hidden relative">
               <AssetIcon name="icon-scanner" size={80} className="lg:scale-125" />
               {!hasAccess(user?.plan, 'elite') && (
-                <div className="absolute inset-0 bg-white/60 dark:bg-black/60 flex items-center justify-center">
-                  <Icon name="lock" className="text-slate-500" />
+                <div className="absolute inset-0 bg-brand-surface/60 flex items-center justify-center">
+                  <Icon name="lock" className="text-brand-dark/50" />
                 </div>
               )}
             </div>
-            <span className="text-[10px] lg:text-xs font-bold text-[#4A5D4F] dark:text-slate-300 leading-tight text-center">{t('dashboard.scanner')}</span>
+            <span className="text-[10px] lg:text-xs font-bold text-brand-dark/80 leading-tight text-center">{t('dashboard.scanner')}</span>
           </button>
         </div>
 
@@ -203,25 +207,27 @@ const Dashboard = () => {
           {[
             { t: "Plants", v: plants.length, s: t('dashboard.stats.plants'), bg: "var(--color-brand-primary)", tx: "text-white" },
             { t: "Cruzas", v: crosses.length, s: t('dashboard.stats.crosses'), bg: "var(--color-brand-secondary)", tx: "text-white" },
-            { t: "Alerts", v: pendingAlerts, s: t('dashboard.stats.alerts'), bg: "var(--color-brand-accent)", tx: "text-[#4A3325]" },
+            { t: "Alerts", v: pendingAlerts, s: t('dashboard.stats.alerts'), bg: "var(--color-brand-accent)", tx: "text-white" },
           ].map((c, i) => (
             <div
               key={i}
-              className="flex-1 text-center py-6 shadow-md border border-white/50 rounded-[36px]"
+              className="flex-1 text-center py-6 shadow-md border border-white/20 rounded-[36px]"
               style={{
                 background: c.bg,
               }}
             >
-              <div className={`text-[9px] uppercase tracking-[0.25em] font-black opacity-40 ${c.tx}`}>
+              <div className={`text-[9px] uppercase tracking-[0.25em] font-black opacity-50 ${c.tx}`}>
                 {c.t}
               </div>
               <div className={`text-2xl font-black mt-1 ${c.tx}`}>{c.v}</div>
-              <div className={`text-[10px] font-semibold opacity-60 ${c.tx}`}>
+              <div className={`text-[10px] font-semibold opacity-70 ${c.tx}`}>
                 {c.s}
               </div>
             </div>
           ))}
         </div>
+
+
 
         <SmartDashboardWidget seedBank={useApp().seedBank} crosses={crosses} plants={plants} />
 
@@ -271,8 +277,8 @@ const Dashboard = () => {
       </div>
 
       {/* BOTTOM NAV */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl
-                            border-t border-white/40 dark:border-slate-800/50 px-10 py-5 flex justify-between z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] lg:hidden">
+      <div className="fixed bottom-0 left-0 right-0 bg-brand-surface/80 backdrop-blur-xl
+                            border-t border-brand-light/20 px-10 py-5 flex justify-between z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] lg:hidden">
         {[
           { l: t('dashboard.bottomNav.home'), ic: <AssetIcon name="icon-home" size={24} />, act: true, path: "/dashboard" },
           { l: t('dashboard.bottomNav.map'), ic: <AssetIcon name="icon-vivero" size={24} />, act: false, path: "/discovery" },
@@ -283,7 +289,7 @@ const Dashboard = () => {
             key={i}
             onClick={() => navigate(t.path)}
             className={`flex flex-col items-center gap-1 cursor-pointer active:scale-90 transition-transform
-                        ${t.act ? "text-[#6B8E23]" : "text-[#CFC8C0]"}`}
+                        ${t.act ? "text-brand-primary" : "text-brand-light/50"}`}
           >
             <div className={`flex items-center justify-center scale-110 ${!t.act ? "opacity-40" : ""}`}>
               {t.ic}
@@ -298,27 +304,28 @@ const Dashboard = () => {
         <PlanComparison currentPlan={user.plan} onClose={() => setShowPlans(false)} />
       )}
 
+
       {isEditingProfile && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-6 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-800 rounded-modal p-7 w-full max-w-xs shadow-float border border-white/40 dark:border-slate-700 translate-y-[-20px]">
-            <h3 className="text-xl font-bold text-[#2E2E2E] dark:text-white mb-4">{t('dashboard.editProfile.title')}</h3>
+          <div className="bg-brand-surface rounded-modal p-7 w-full max-w-xs shadow-float border border-brand-light/20 translate-y-[-20px]">
+            <h3 className="text-xl font-bold text-brand-dark mb-4">{t('dashboard.editProfile.title')}</h3>
             <input
               autoFocus
               type="text"
               value={newProfileName}
               onChange={(e) => setNewProfileName(e.target.value)}
-              className="w-full bg-[#FBF8F2] dark:bg-slate-900 border border-[#E8E2D7] dark:border-slate-700 rounded-2xl p-4 text-[#2E2E2E] dark:text-white mb-6 font-bold outline-none focus:ring-2 focus:ring-[#6B8E23]/20"
+              className="w-full bg-brand-bg/50 border border-brand-light/30 rounded-2xl p-4 text-brand-dark mb-6 font-bold outline-none focus:ring-2 focus:ring-brand-primary/20"
             />
             <div className="flex gap-4">
               <button
                 onClick={() => setIsEditingProfile(false)}
-                className="flex-1 py-3 text-[#8E877F] font-bold rounded-xl hover:bg-black/5 transition-colors"
+                className="flex-1 py-3 text-brand-dark/60 font-bold rounded-xl hover:bg-black/5 transition-colors"
               >
                 {t('dashboard.editProfile.cancel')}
               </button>
               <button
                 onClick={handleSaveProfileName}
-                className="flex-1 py-3 bg-[#6B8E23] text-white rounded-xl font-bold shadow-lg shadow-[#6B8E23]/20 hover:brightness-[1.03] transition"
+                className="flex-1 py-3 bg-brand-primary text-white rounded-xl font-bold shadow-lg shadow-brand-primary/20 hover:brightness-[1.03] transition"
               >
                 {t('dashboard.editProfile.save')}
               </button>

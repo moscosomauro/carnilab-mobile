@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import { ShopProduct } from '../../types';
-import { ShoppingBag, X, Plus, Minus, Send, Heart, Search, Filter, Instagram, MessageCircle, Mail, Leaf, Award, TrendingUp, Eye } from 'lucide-react';
+import { ShoppingBag, X, Plus, Minus, Send, Heart, Search, Filter, Instagram, MessageCircle, Mail, Leaf, Award, TrendingUp, Eye, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 // Shop Owner Profile Interface
 interface ShopProfile {
@@ -17,6 +18,7 @@ interface ShopProfile {
 
 export default function ShopPublic() {
     const { slug } = useParams();
+    const navigate = useNavigate();
     const [products, setProducts] = useState<ShopProduct[]>([]);
     const [loading, setLoading] = useState(true);
     const [cart, setCart] = useState<{ product: ShopProduct; qty: number }[]>([]);
@@ -225,6 +227,12 @@ export default function ShopPublic() {
             {/* HEADER */}
             <header className="sticky top-0 left-0 right-0 z-40 px-6 py-4 flex justify-between items-center bg-white/20 backdrop-blur-xl border-b border-white/30 shadow-lg">
                 <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="p-2 bg-white/40 rounded-full hover:bg-white/60 transition-colors"
+                    >
+                        <ArrowLeft size={22} color="#1A4D2E" />
+                    </button>
                     {shopProfile.avatar_url && (
                         <img src={shopProfile.avatar_url} className="w-10 h-10 rounded-full border-2 border-[#1A4D2E] object-cover" alt="Owner" />
                     )}
@@ -368,7 +376,7 @@ export default function ShopPublic() {
                                                 <div className="flex gap-3">
                                                     {relatedToFeatured.map(rp => (
                                                         <div key={rp.id} className="w-20 h-20 rounded-lg overflow-hidden cursor-pointer hover:scale-110 transition-transform border-2 border-white/30" onClick={() => addToCart(rp)}>
-                                                            <img src={rp.image_url} className="w-full h-full object-cover" alt={rp.title} />
+                                                            <img src={rp.image_url} className="w-full h-full object-cover" alt={rp.title} loading="lazy" />
                                                         </div>
                                                     ))}
                                                 </div>
@@ -537,6 +545,7 @@ export default function ShopPublic() {
                                     <img
                                         src={product.image_url}
                                         alt={product.title}
+                                        loading="lazy"
                                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#1A4D2E]/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -739,7 +748,7 @@ export default function ShopPublic() {
                             ) : (
                                 cart.map(item => (
                                     <div key={item.product.id} className="flex gap-4 items-center bg-white/50 p-3 rounded-xl hover:bg-white/70 transition-colors">
-                                        <img src={item.product.image_url} className="w-16 h-16 rounded-lg object-cover bg-white shadow-sm" alt="" />
+                                        <img src={item.product.image_url} className="w-16 h-16 rounded-lg object-cover bg-white shadow-sm" alt="" loading="lazy" />
                                         <div className="flex-1">
                                             <h4 className="font-bold text-[#1A4D2E]">{item.product.title}</h4>
                                             <div className="text-sm text-[#D4AF37] font-bold">${item.product.price} × {item.qty}</div>

@@ -1,134 +1,94 @@
-import { useEffect, useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
 
 export const ThemeParticles = () => {
     const { currentTheme } = useTheme();
-    const [particles, setParticles] = useState<JSX.Element[]>([]);
 
-    useEffect(() => {
-        if (currentTheme === 'christmas') {
-            // Generate snowflakes
-            const snowflakes = Array.from({ length: 50 }, (_, i) => (
-                <div
-                    key={`snow-${i}`}
-                    className="absolute text-white opacity-70 pointer-events-none"
-                    style={{
-                        left: `${Math.random() * 100}%`,
-                        top: `-10px`,
-                        fontSize: `${Math.random() * 10 + 10}px`,
-                        animation: `snowfall ${Math.random() * 7 + 8}s linear infinite`,
-                        animationDelay: `${Math.random() * 5}s`,
-                    }}
-                >
-                    ❄
-                </div>
-            ));
-            setParticles(snowflakes);
-        } else if (currentTheme === 'halloween') {
-            // Generate floating particles
-            const ghosts = Array.from({ length: 20 }, (_, i) => (
-                <div
-                    key={`ghost-${i}`}
-                    className="absolute opacity-20 pointer-events-none"
-                    style={{
-                        left: `${Math.random() * 100}%`,
-                        top: `${Math.random() * 100}%`,
-                        fontSize: `${Math.random() * 20 + 20}px`,
-                        animation: `ghostFloat ${Math.random() * 4 + 3}s ease-in-out infinite`,
-                        animationDelay: `${Math.random() * 3}s`,
-                        color: '#e67e22',
-                    }}
-                >
-                    👻
-                </div>
-            ));
-            setParticles(ghosts);
-        } else if (currentTheme === 'spring') {
-            // Generate flower petals
-            const petals = Array.from({ length: 30 }, (_, i) => (
-                <div
-                    key={`petal-${i}`}
-                    className="absolute opacity-60 pointer-events-none"
-                    style={{
-                        left: `${Math.random() * 100}%`,
-                        top: `${Math.random() * 100}%`,
-                        fontSize: `${Math.random() * 15 + 15}px`,
-                        animation: `petalFloat ${Math.random() * 4 + 3}s ease-in-out infinite alternate`,
-                        animationDelay: `${Math.random() * 3}s`,
-                        color: i % 3 === 0 ? '#ff69b4' : i % 3 === 1 ? '#ffd700' : '#98d8c8',
-                    }}
-                >
-                    🌸
-                </div>
-            ));
-            setParticles(petals);
-        } else if (currentTheme === 'summer') {
-            // Generate sun rays/sparkles
-            const rays = Array.from({ length: 25 }, (_, i) => (
-                <div
-                    key={`ray-${i}`}
-                    className="absolute opacity-50 pointer-events-none"
-                    style={{
-                        left: `${Math.random() * 100}%`,
-                        top: `${Math.random() * 100}%`,
-                        fontSize: `${Math.random() * 12 + 12}px`,
-                        animation: `sunPulse ${Math.random() * 2 + 2}s ease-in-out infinite`,
-                        animationDelay: `${Math.random() * 2}s`,
-                        color: i % 2 === 0 ? '#ffa500' : '#ff6347',
-                    }}
-                >
-                    ✨
-                </div>
-            ));
-            setParticles(rays);
-        } else if (currentTheme === 'autumn') {
-            // Generate falling leaves
-            const leaves = Array.from({ length: 35 }, (_, i) => (
-                <div
-                    key={`leaf-${i}`}
-                    className="absolute opacity-70 pointer-events-none"
-                    style={{
-                        left: `${Math.random() * 100}%`,
-                        top: `-10px`,
-                        fontSize: `${Math.random() * 12 + 12}px`,
-                        animation: `snowfall ${Math.random() * 8 + 10}s linear infinite`,
-                        animationDelay: `${Math.random() * 5}s`,
-                        color: i % 3 === 0 ? '#d2691e' : i % 3 === 1 ? '#cd853f' : '#dc143c',
-                    }}
-                >
-                    🍂
-                </div>
-            ));
-            setParticles(leaves);
-        } else if (currentTheme === 'winter') {
-            // Generate snowflakes (similar to Christmas but blue-tinted)
-            const winterSnow = Array.from({ length: 40 }, (_, i) => (
-                <div
-                    key={`winter-snow-${i}`}
-                    className="absolute opacity-60 pointer-events-none"
-                    style={{
-                        left: `${Math.random() * 100}%`,
-                        top: `-10px`,
-                        fontSize: `${Math.random() * 10 + 10}px`,
-                        animation: `snowfall ${Math.random() * 7 + 8}s linear infinite`,
-                        animationDelay: `${Math.random() * 5}s`,
-                        color: '#87ceeb',
-                    }}
-                >
-                    ❄
-                </div>
-            ));
-            setParticles(winterSnow);
-        } else {
-            setParticles([]);
-        }
-    }, [currentTheme]);
+    // No particles for default theme
+    if (currentTheme === 'default' || currentTheme === 'neon') return null;
 
-    if (particles.length === 0) return null;
+    // Theme-specific gradient configurations
+    const themeConfigs: Record<string, {
+        gradient1: string;
+        gradient2: string;
+        glowColor: string;
+        animationDuration: string;
+    }> = {
+        christmas: {
+            gradient1: 'radial-gradient(circle at 20% 80%, rgba(192, 57, 43, 0.08) 0%, transparent 50%)',
+            gradient2: 'radial-gradient(circle at 80% 20%, rgba(39, 174, 96, 0.08) 0%, transparent 50%)',
+            glowColor: 'rgba(255, 215, 0, 0.1)',
+            animationDuration: '8s',
+        },
+        halloween: {
+            gradient1: 'radial-gradient(circle at 30% 70%, rgba(230, 126, 34, 0.1) 0%, transparent 50%)',
+            gradient2: 'radial-gradient(circle at 70% 30%, rgba(142, 68, 173, 0.08) 0%, transparent 50%)',
+            glowColor: 'rgba(230, 126, 34, 0.08)',
+            animationDuration: '10s',
+        },
+        spring: {
+            gradient1: 'radial-gradient(circle at 25% 75%, rgba(152, 216, 200, 0.12) 0%, transparent 50%)',
+            gradient2: 'radial-gradient(circle at 75% 25%, rgba(255, 182, 193, 0.1) 0%, transparent 50%)',
+            glowColor: 'rgba(144, 238, 144, 0.08)',
+            animationDuration: '12s',
+        },
+        summer: {
+            gradient1: 'radial-gradient(circle at 50% 0%, rgba(255, 165, 0, 0.12) 0%, transparent 60%)',
+            gradient2: 'radial-gradient(circle at 50% 100%, rgba(255, 99, 71, 0.08) 0%, transparent 50%)',
+            glowColor: 'rgba(255, 215, 0, 0.1)',
+            animationDuration: '10s',
+        },
+        autumn: {
+            gradient1: 'radial-gradient(ellipse at 0% 0%, rgba(199, 93, 32, 0.15) 0%, transparent 50%)',
+            gradient2: 'radial-gradient(ellipse at 100% 100%, rgba(184, 134, 11, 0.12) 0%, transparent 50%)',
+            glowColor: 'rgba(212, 114, 42, 0.1)',
+            animationDuration: '15s',
+        },
+        winter: {
+            gradient1: 'radial-gradient(circle at 30% 30%, rgba(135, 206, 235, 0.1) 0%, transparent 50%)',
+            gradient2: 'radial-gradient(circle at 70% 70%, rgba(176, 224, 230, 0.08) 0%, transparent 50%)',
+            glowColor: 'rgba(173, 216, 230, 0.1)',
+            animationDuration: '14s',
+        },
+    };
+
+    const config = themeConfigs[currentTheme];
+    if (!config) return null;
 
     return (
-        <div className="fixed inset-0 pointer-events-none z-[100] overflow-hidden">
-            {particles}
+        <div className="fixed inset-0 pointer-events-none z-[1] overflow-hidden">
+            {/* Primary gradient orb - moves slowly */}
+            <div
+                className="absolute w-[80vw] h-[80vw] max-w-[600px] max-h-[600px] rounded-full blur-2xl"
+                style={{
+                    background: config.gradient1,
+                    animation: `subtleFloat ${config.animationDuration} ease-in-out infinite`,
+                    top: '10%',
+                    left: '-10%',
+                }}
+            />
+
+            {/* Secondary gradient orb - moves opposite */}
+            <div
+                className="absolute w-[70vw] h-[70vw] max-w-[500px] max-h-[500px] rounded-full blur-2xl"
+                style={{
+                    background: config.gradient2,
+                    animation: `subtleFloat ${config.animationDuration} ease-in-out infinite reverse`,
+                    bottom: '10%',
+                    right: '-10%',
+                }}
+            />
+
+            {/* Subtle center glow - pulses gently */}
+            <div
+                className="absolute w-[50vw] h-[50vw] max-w-[400px] max-h-[400px] rounded-full blur-2xl"
+                style={{
+                    background: `radial-gradient(circle, ${config.glowColor} 0%, transparent 70%)`,
+                    animation: `subtlePulse 6s ease-in-out infinite`,
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                }}
+            />
         </div>
     );
 };

@@ -5,6 +5,7 @@ import { useAuth } from './AuthContext';
 import { logger } from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { syncPendingImages } from '../utils/imageHelpers';
+import { objectiveEvents } from '../utils/dailyObjectives';
 
 interface PendingAction {
   id: string;
@@ -68,6 +69,14 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+// Helper para timeouts de red
+export const withTimeout = (promise: any, ms = 60000) => {
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('Request timed out')), ms)
+  );
+  return Promise.race([Promise.resolve(promise), timeout]);
+};
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
 
@@ -101,13 +110,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // 🔒 LOCK REAL para evitar 2 addCross simultáneos (causa “una sí / una no”)
   const addCrossLockRef = useRef(false);
 
-  // Helper para timeouts de red
-  const withTimeout = (promise: any, ms = 60000) => {
-    const timeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Request timed out')), ms)
-    );
-    return Promise.race([Promise.resolve(promise), timeout]);
-  };
+
 
   // ✅ tempId sin colisiones usando UUID + timestamp para garantizar unicidad
   const makeTempId = () => {
@@ -259,9 +262,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const plantsData = plantsRes.value.data;
           setPlants(prev => {
             const syncing = prev.filter(p => (p as any).isSyncing);
-            return [...syncing, ...plantsData];
+            const offline = prev.filter((p: any) => typeof p.id === 'number' && p.id > 100000000000 && !(p as any).isSyncing);
+            
+            const existingIds = new Set([...syncing, ...offline].map((p: any) => p.id));
+            const newPlants = plantsData.filter((p: any) => !existingIds.has(p.id));
+            
+            const mergedPlants = [...syncing, ...offline, ...newPlants];
+            saveToLocal('plants', mergedPlants);
+            return mergedPlants;
           });
-          saveToLocal('plants', plantsData);
 
           // ✅ Setear cursor y hasMore para paginación
           if (plantsData.length > 0) {
@@ -551,6 +560,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await supabase.from('climate_logs').insert(climateToInsert);
       }
 
+      if (backupData.diary?.length) {
+        const diaryToInsert = backupData.diary.map((d: any) => {
+          const { id, ...rest } = d;
+          return { ...rest, owner_key: user.key };
+        });
+        await supabase.from('diary').insert(diaryToInsert);
+      }
+
+      if (backupData.seedBank?.length) {
+        const seedBankToInsert = backupData.seedBank.map((s: any) => {
+          const { id, ...rest } = s;
+          return { ...rest, owner_key: user.key };
+        });
+        await supabase.from('seed_bank').insert(seedBankToInsert);
+      }
+
       await fetchData();
       setIsSyncing(false);
       return true;
@@ -578,8 +603,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (navigator.onLine && !offlineMode) {
       console.log("[AppContext] addPlant: Enviando a Supabase...");
       try {
+        // Timeout reducido a 15 segundos para evitar cuelgues largos
         const { data, error } = await withTimeout(
-          supabase.from('plants').insert({ ...plant, owner_key: user.key }).select().single()
+          supabase.from('plants').insert({ ...plant, owner_key: user.key }).select().single(),
+          15000
         ) as any;
 
         console.log('[AppContext] addPlant: Respuesta de Supabase:', { data, error });
@@ -587,7 +614,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (error) {
           console.error("[AppContext] addPlant: Error de Supabase:", error);
           queueAction('ADD_PLANT', { ...plant, owner_key: user.key });
-          // Mantenemos el estado local con el tempId
           return tempPlant;
         }
 
@@ -596,8 +622,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const finalPlants = newPlants.map(p => p.id === tempPlant.id ? data : p);
           setPlants(finalPlants);
           saveToLocal('plants', finalPlants);
-          
-          // Registro en diario
+
+          // Trigger objetivo diario
+          objectiveEvents.emit('add_plant');
+
+          // Registro en diario (sin await para no bloquear)
           addDiaryEntry({
             planta_nombre: plant.nombre,
             planta_especie: plant.especie,
@@ -605,19 +634,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             tipo: 'observacion',
             descripcion: `Nueva planta agregada: ${plant.nombre}`,
             imagen: plant.imagen
-          });
+          }).catch(e => console.warn('Error agregando entrada de diario:', e));
+
           return data;
         }
+
+        // Sin data ni error - guardar offline
+        console.warn('[AppContext] addPlant: Sin data ni error, guardando offline');
+        queueAction('ADD_PLANT', { ...plant, owner_key: user.key });
+        return tempPlant;
+
       } catch (error: any) {
         console.error("Supabase Error:", error);
-        window.alert(`Error al guardar en la nube: ${error.message || 'Timeout'}`);
-        return null;
+        // En timeout, guardar offline sin mostrar error
+        if (error.message === 'Request timed out') {
+          console.log('[AppContext] addPlant: Timeout, guardando offline');
+          queueAction('ADD_PLANT', { ...plant, owner_key: user.key });
+          return tempPlant;
+        }
+        // Guardar offline y retornar tempPlant para no bloquear
+        queueAction('ADD_PLANT', { ...plant, owner_key: user.key });
+        return tempPlant;
       }
     } else {
       queueAction('ADD_PLANT', plant);
       return tempPlant;
     }
-    return null;
   };
 
   const updatePlant = async (plant: Plant): Promise<boolean> => {
@@ -718,6 +760,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             saveToLocal('crosses', updated);
             return updated;
           });
+
+          // Trigger objetivo diario
+          objectiveEvents.emit('create_cross');
+
           return { success: true };
         }
 
@@ -820,6 +866,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const finalDiary = newDiary.map(d => d.id === tempEntry.id ? data : d);
           setDiary(finalDiary);
           saveToLocal('diary', finalDiary);
+
+          // Trigger objetivos diarios
+          objectiveEvents.emit('diary_entry');
+          if (entry.imagen || (entry.imagenes && entry.imagenes.length > 0)) {
+            objectiveEvents.emit('diary_photo');
+          }
+
           return true;
         }
 
@@ -892,10 +945,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const finalLogs = newLogs.map(l => l.id === tempLog.id ? data : l);
         setClimateLogs(finalLogs);
         saveToLocal('climate', finalLogs);
+
+        // Trigger objetivo diario
+        objectiveEvents.emit('climate_log');
+
         return true;
       }
     } else {
       queueAction('ADD_CLIMATE', log);
+      // Trigger objetivo diario incluso offline
+      objectiveEvents.emit('climate_log');
       return true;
     }
     return false;
@@ -914,6 +973,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateCross = async (cross: Cross): Promise<boolean> => {
+    // Obtener estado anterior para detectar cambio a completada
+    const previousCross = crosses.find(c => c.id === cross.id);
+    const justCompleted = cross.estado === 'completada' && previousCross?.estado !== 'completada';
+
     setCrosses(prev => prev.map(c => c.id === cross.id ? cross : c));
     saveToLocal('crosses', crosses.map(c => c.id === cross.id ? cross : c));
 
@@ -928,6 +991,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } else {
       queueAction('UPDATE_CROSS', cross);
     }
+
+    // Trigger objetivo diario si se completó la cruza
+    if (justCompleted) {
+      objectiveEvents.emit('complete_cross');
+    }
+
     return true;
   };
 
@@ -935,6 +1004,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAlerts(prev => prev.map(a => a.id === id ? { ...a, completada: true } : a));
     if (activeNotification?.id === id) setActiveNotification(null);
     if (navigator.onLine) await supabase.from('alerts').update({ completada: true }).eq('id', id);
+
+    // Trigger objetivo diario
+    objectiveEvents.emit('complete_alert');
+
     return true;
   };
 
@@ -978,6 +1051,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const finalBank = newBank.map(s => s.id === tempBatch.id ? { ...data, isSyncing: false } : s);
           setSeedBank(finalBank);
           saveToLocal('seedbank', finalBank);
+
+          // Trigger objetivo diario si está estratificando
+          if (batch.estado === 'estratificando') {
+            objectiveEvents.emit('start_stratification');
+          }
+
           return true;
         }
 

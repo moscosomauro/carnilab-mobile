@@ -128,8 +128,12 @@ const getDesignFilename = (genus: string): string => {
 // Generar HTML para impresión usando tu diseño artístico con QR dinámico
 const generateLabelPrintHTML = (plant: Plant): string => {
     const genus = getGenusFromSpecies(plant.especie);
+    const theme = GENUS_THEMES[genus];
     const designFile = getDesignFilename(genus);
     const qrValue = `carnilab-plant-${plant.id}`;
+
+    // Convertir color hex a formato URL-safe (sin #)
+    const fgColorHex = theme.primary.replace('#', '');
 
     return `
         <!DOCTYPE html>
@@ -179,21 +183,19 @@ const generateLabelPrintHTML = (plant: Plant): string => {
                     top: 50%;
                     left: 50%;
                     transform: translate(-50%, -50%);
-                    width: 200px;
-                    height: 200px;
+                    width: 170px;
+                    height: 170px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    background: rgba(255, 255, 255, 0.85);
-                    backdrop-filter: blur(8px);
-                    border-radius: 16px;
-                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-                    padding: 10px;
+                    background: radial-gradient(circle, ${theme.bg} 60%, ${theme.bg}ee 75%, ${theme.bg}aa 85%, transparent 100%);
+                    border-radius: 18px;
+                    padding: 8px;
                 }
 
                 .qr-overlay img {
-                    width: 180px;
-                    height: 180px;
+                    width: 145px;
+                    height: 145px;
                     display: block;
                 }
             </style>
@@ -203,10 +205,10 @@ const generateLabelPrintHTML = (plant: Plant): string => {
                 <!-- Tu diseño artístico como fondo -->
                 <img src="/assets/designs/${designFile}.png" alt="${genus}" class="background-design">
 
-                <!-- QR dinámico superpuesto en el centro -->
+                <!-- QR dinámico integrado suavemente -->
                 <div class="qr-overlay">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrValue)}&margin=0"
-                         alt="QR Code">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=145x145&data=${encodeURIComponent(qrValue)}&margin=0&color=${fgColorHex}"
+                         alt="QR Code" style="background: transparent;">
                 </div>
             </div>
         </body>
@@ -297,29 +299,28 @@ export const QRLabel: React.FC<QRLabelProps> = ({ plant, onClose, canPrint }) =>
                             }}
                         />
 
-                        {/* QR dinámico superpuesto en el centro con marco semi-transparente */}
+                        {/* QR dinámico superpuesto - integrado suavemente */}
                         <div style={{
                             position: 'absolute',
                             top: '50%',
                             left: '50%',
                             transform: 'translate(-50%, -50%)',
-                            width: '200px',
-                            height: '200px',
+                            width: '190px',
+                            height: '190px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            background: 'rgba(255, 255, 255, 0.85)',
-                            backdropFilter: 'blur(8px)',
-                            borderRadius: '16px',
-                            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+                            background: `radial-gradient(circle, ${theme.bg} 60%, ${theme.bg}ee 75%, ${theme.bg}aa 85%, transparent 100%)`,
+                            borderRadius: '18px',
                             padding: '10px'
                         }}>
                             <QRCodeSVG
                                 value={`carnilab-plant-${plant.id}`}
-                                size={180}
+                                size={162}
                                 level="H"
                                 includeMargin={false}
                                 bgColor="transparent"
+                                fgColor={theme.primary}
                             />
                         </div>
                     </div>

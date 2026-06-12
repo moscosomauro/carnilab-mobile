@@ -12,7 +12,7 @@ export const DynamicBackground = () => {
             case 'christmas': return '/assets/themes/christmas/background.png';
             case 'halloween': return '/assets/themes/halloween/background.png';
             case 'neon': return '/assets/themes/neon/background.png';
-            default: return '/assets/backgrounds/bg-paper-texture.png';
+            default: return '/assets/backgrounds/bg-paper-texture.jpg';
         }
     };
 

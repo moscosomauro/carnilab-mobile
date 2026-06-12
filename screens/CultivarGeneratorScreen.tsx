@@ -51,8 +51,9 @@ export const CultivarGeneratorScreen: React.FC = () => {
             setAnalysis(result);
             setFinalDescription(result.description);
             setStep(2);
-        } catch (error) {
-            alert("Error al analizar la planta. Inténtalo de nuevo.");
+        } catch (error: any) {
+            console.error("Cultivar Analysis Error:", error);
+            alert(`Error al analizar: ${error?.message || error}`);
         } finally {
             setIsLoading(false);
         }

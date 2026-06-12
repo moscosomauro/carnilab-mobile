@@ -205,3 +205,147 @@ export interface SeedBatch {
   owner_key?: string;
   isSyncing?: boolean;
 }
+
+// =============================================
+// GENETIC ANALYSIS TYPES (Lab / AI Vision)
+// =============================================
+
+export interface ColorationAnalysis {
+  dominant: string; // "red" | "green" | "mixed"
+  percentage: number;
+  description: string;
+}
+
+export interface TrapSizeAnalysis {
+  category: 'miniature' | 'small' | 'medium' | 'large' | 'giant';
+  estimated_cm: number;
+}
+
+export interface TeethAnalysis {
+  type: 'short' | 'medium' | 'long' | 'fused';
+  description: string;
+}
+
+export interface VigorAnalysis {
+  level: 'low' | 'medium' | 'high';
+  score: number; // 1-10
+}
+
+export interface GeneticAnalysisResult {
+  coloration: ColorationAnalysis;
+  trap_size: TrapSizeAnalysis;
+  teeth_shape: TeethAnalysis;
+  vigor: VigorAnalysis;
+  anthocyanins: {
+    present: boolean;
+    intensity: 'none' | 'light' | 'moderate' | 'strong';
+  };
+  growth_pattern: {
+    type: 'upright' | 'prostrate' | 'rosette';
+    description: string;
+  };
+  traits: string[]; // Lista de rasgos identificados
+  raw_analysis: string; // Texto completo de la IA
+  confidence?: number; // 0.0 - 1.0
+}
+
+export interface CrossAnalysis {
+  id: string;
+  cross_id: number;
+  owner_key: string;
+  image_url: string;
+  image_type: 'progeny' | 'mother' | 'father';
+  analysis_result: GeneticAnalysisResult;
+  confidence_score: number;
+  model_used: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProgenyPhoto {
+  id: string;
+  cross_id: number;
+  owner_key: string;
+  image_url: string;
+  label?: string;
+  notes?: string;
+  analysis_id?: string | null;
+  analysis?: CrossAnalysis | null; // Populated on fetch
+  created_at: string;
+}
+
+// =============================================
+// DAILY OBJECTIVES SYSTEM
+// =============================================
+
+export type ObjectiveType =
+  | 'add_plant'
+  | 'diary_entry'
+  | 'diary_photo'
+  | 'complete_alert'
+  | 'climate_log'
+  | 'create_cross'
+  | 'complete_cross'
+  | 'start_stratification'
+  | 'ai_analysis';
+
+export interface DailyObjective {
+  id: string;
+  type: ObjectiveType;
+  title: string;
+  description: string;
+  xpReward: number;
+  requiredPlan: PlanType;
+  isCompleted: boolean;
+  completedAt?: string;
+  icon: string;
+}
+
+export interface DailyObjectivesState {
+  date: string; // YYYY-MM-DD
+  objectives: DailyObjective[];
+  totalXpToday: number;
+  streak: number;
+  lastStreakDate: string | null;
+}
+
+export interface UserXpProfile {
+  totalXp: number;
+  level: number;
+  currentLevelXp: number;
+  xpToNextLevel: number;
+}
+
+// =============================================
+// BADGE / ACHIEVEMENT SYSTEM
+// =============================================
+
+export type BadgeCategory = 'collection' | 'breeding' | 'dedication' | 'mastery' | 'special';
+
+export type BadgeRarity = 'common' | 'rare' | 'epic' | 'legendary';
+
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: BadgeCategory;
+  rarity: BadgeRarity;
+  requirement: {
+    type: string;
+    count: number;
+  };
+  xpBonus: number;
+}
+
+export interface UserBadge {
+  badgeId: string;
+  unlockedAt: string;
+  progress: number; // 0-100
+}
+
+export interface BadgesState {
+  earnedBadges: UserBadge[];
+  totalBadgesEarned: number;
+  lastUnlockedBadge: string | null;
+}

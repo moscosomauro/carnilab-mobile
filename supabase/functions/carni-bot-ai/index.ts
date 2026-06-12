@@ -134,7 +134,7 @@ serve(async (req) => {
         ];
 
         // CORRECTED: tools passed as 'tools', not 'toolConfig'
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash", tools: tools }, { apiVersion: 'v1beta' });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash", tools: tools }, { apiVersion: 'v1beta' });
 
         // 6. Build System Prompt & Chat
         const currentMessage = messages[messages.length - 1].text;
@@ -168,7 +168,7 @@ serve(async (req) => {
         let result;
         if (image) {
             // Upgrade to PRO model for better vision accuracy
-            const modelVision = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+            const modelVision = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
             prompt = `
             ACTÚA COMO UN EXPERTO BOTÁNICO MUNDIAL ESPECIALIZADO EN PLANTAS CARNÍVORAS.

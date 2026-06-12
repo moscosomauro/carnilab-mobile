@@ -988,7 +988,7 @@ const CrossesScreen: React.FC = () => {
                       )}
                       
                       <button
-                        onClick={() => navigate('/cultivar-generator', { state: { cross: selectedCross } })}
+                        onClick={() => navigate('/cultivar-gen', { state: { cross: selectedCross } })}
                         className="w-full mt-3 h-12 bg-gradient-to-r from-[#D4AF37] to-[#B39226] text-white rounded-full text-[12px] font-black active:scale-95 transition-all shadow-lg flex items-center justify-center gap-2"
                       >
                         <span className="text-lg">🏅</span> {t('crosses.modalDetail.registerElite')}

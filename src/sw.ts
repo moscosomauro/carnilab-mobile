@@ -1,5 +1,5 @@
 /// <reference lib="webworker" />
-// VERSION: v1.1.1
+// VERSION: v1.1.2
 
 declare let self: ServiceWorkerGlobalScope
 
@@ -58,17 +58,27 @@ self.addEventListener('push', (event: any) => {
 // Notification Click Listener
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
+
+  // Get the route from notification data (e.g., '/alerts')
+  const route = event.notification.data || '/alerts'
+  // Build full URL with hash for HashRouter (e.g., '/#/alerts')
+  const urlToOpen = new URL('/#' + route, self.location.origin).href
+
   event.waitUntil(
-    self.clients.matchAll({ type: 'window' }).then((clientList) => {
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       // Focus existing window if open
       for (const client of clientList) {
-        if (client.url === event.notification.data && 'focus' in client) {
-          return client.focus()
+        if ('focus' in client) {
+          return client.focus().then(() => {
+            // Navigate to the route
+            client.postMessage({ type: 'NAVIGATE', url: route })
+            return client
+          })
         }
       }
       // Open new window if closed
       if (self.clients.openWindow) {
-        return self.clients.openWindow(event.notification.data)
+        return self.clients.openWindow(urlToOpen)
       }
     })
   )

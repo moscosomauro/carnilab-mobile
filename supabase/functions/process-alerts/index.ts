@@ -13,21 +13,25 @@ serve(async (req) => {
     }
 
     try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+        const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+
         // Initialize Admin Client (Service Role)
-        const supabaseAdmin = createClient(
-            Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-        );
+        const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
         // 1. Fetch pending alerts due now or in the past
         const now = new Date().toISOString();
+        console.log(`Checking alerts at: ${now}`);
+
         const { data: alerts, error: fetchError } = await supabaseAdmin
             .from('alerts')
-            .select('*, auth_users:user_id(id)') // Join if needed, but user_id is on alert
+            .select('*')
             .eq('completada', false)
-            .eq('notified', false) // Only un-notified
+            .eq('notified', false)
             .lte('fecha', now)
-            .limit(50); // Process in batches
+            .limit(50);
+
+        console.log(`Found ${alerts?.length || 0} alerts to process`);
 
         if (fetchError) throw fetchError;
 
@@ -44,20 +48,27 @@ serve(async (req) => {
         // 2. Loop through alerts and send push
         for (const alert of alerts) {
             try {
-                // Call send-push function
-                // We use invoke to reuse the logic we already built
-                const { data, error: pushError } = await supabaseAdmin.functions.invoke('send-push', {
-                    body: {
-                        owner_key: alert.owner_key, // Use license key to find user
+                // Call send-push function via HTTP with Service Role Key
+                const pushResponse = await fetch(`${supabaseUrl}/functions/v1/send-push`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${serviceRoleKey}`
+                    },
+                    body: JSON.stringify({
+                        owner_key: alert.owner_key,
                         title: `⏰ Recordatorio: ${alert.planta}`,
                         body: alert.mensaje,
                         data: { url: '/alerts' }
-                    }
+                    })
                 });
 
-                if (pushError) {
-                    console.error(`Failed to push for alert ${alert.id}:`, pushError);
-                    results.push({ id: alert.id, status: 'failed', error: pushError });
+                const pushResult = await pushResponse.json();
+                console.log(`Push result for alert ${alert.id}:`, pushResult);
+
+                if (!pushResponse.ok || pushResult.error) {
+                    console.error(`Failed to push for alert ${alert.id}:`, pushResult);
+                    results.push({ id: alert.id, status: 'failed', error: pushResult.error });
                 } else {
                     // 3. Mark as notified
                     await supabaseAdmin
@@ -65,7 +76,7 @@ serve(async (req) => {
                         .update({ notified: true })
                         .eq('id', alert.id);
 
-                    results.push({ id: alert.id, status: 'sent' });
+                    results.push({ id: alert.id, status: 'sent', sent: pushResult.sent });
                 }
 
             } catch (e) {

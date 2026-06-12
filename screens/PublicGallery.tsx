@@ -6,6 +6,7 @@ import { FEATURED_NURSERIES } from '../src/data/mockData';
 import { getCountryName, getFlagEmoji } from '../src/data/countryData';
 import { ImageCarouselWithThumbnails } from '../components/ImageCarousel';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Icon } from '../components/Icon';
 
 const PublicGallery: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -171,9 +172,10 @@ const PublicGallery: React.FC = () => {
         onClick={() => setViewMode(prev => prev === 'showroom' ? 'cine' : 'showroom')}
         className="fixed bottom-10 right-10 z-[80] w-20 h-20 bg-white text-black rounded-full shadow-float flex flex-col items-center justify-center border border-gray-100 hover:scale-110 active:scale-95 transition-all group animate-pulse hover:animate-none"
       >
-        <span className="material-symbols-outlined text-2xl group-hover:rotate-12 transition-transform">
-          {viewMode === 'showroom' ? 'movie' : 'dashboard'}
-        </span>
+        <Icon 
+          name={viewMode === 'showroom' ? 'movie' : 'dashboard'} 
+          className="text-2xl group-hover:rotate-12 transition-transform" 
+        />
         <span className="text-[8px] font-black uppercase tracking-tighter mt-1">
           {viewMode === 'showroom' ? 'Cine' : 'Showroom'}
         </span>
@@ -302,11 +304,11 @@ const CineView: React.FC<any> = ({ categories, plants, handleContactClick }) => 
               onClick={() => handleContactClick(billboardPlant)}
               className="bg-white text-black px-6 lg:px-10 py-3 lg:py-4 rounded-md font-black text-[10px] lg:text-xs uppercase flex items-center gap-2 hover:bg-white/90 transition-all active:scale-95"
             >
-              <span className="material-symbols-outlined filled text-lg">play_arrow</span>
+              <Icon name="play_arrow" className="text-lg" />
               Ver Detalles
             </button>
             <button className="bg-white/20 backdrop-blur-md text-white px-6 lg:px-10 py-3 lg:py-4 rounded-md font-black text-[10px] lg:text-xs uppercase flex items-center gap-2 hover:bg-white/30 transition-all active:scale-95">
-              <span className="material-symbols-outlined text-lg">info</span>
+              <Icon name="info" className="text-lg" />
               Más Info
             </button>
           </div>
@@ -345,7 +347,7 @@ const CineView: React.FC<any> = ({ categories, plants, handleContactClick }) => 
 
                     {!plant.en_venta && (
                       <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md p-1 rounded-full border border-white/10 opacity-60">
-                        <span className="material-symbols-outlined text-[12px] text-white/40">lock</span>
+                        <Icon name="lock" className="text-[12px] text-white/40" />
                       </div>
                     )}
                   </div>
@@ -401,14 +403,14 @@ const MobileView: React.FC<any> = ({
               <div className="grid grid-cols-2 gap-y-4 gap-x-2">
                 <div>
                   <span className="text-[7px] text-[#8E877F] font-black uppercase tracking-[0.2em] block mb-0.5 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[8px] text-[#D4AF37]">fingerprint</span> Identidad
+                    <Icon name="fingerprint" className="text-[8px] text-[#D4AF37]" /> Identidad
                   </span>
                   <span className="text-white text-[10px] font-bold block truncate">{vivero.label}</span>
                 </div>
 
                 <div>
                   <span className="text-[7px] text-[#8E877F] font-black uppercase tracking-[0.2em] block mb-0.5 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[8px] text-[#D4AF37]">public</span> Ubicación
+                    <Icon name="public" className="text-[8px] text-[#D4AF37]" /> Ubicación
                   </span>
                   <span className="text-white text-[10px] font-bold block truncate flex items-center gap-1">
                     {getFlagEmoji(vivero.country || 'AR')} {getCountryName(vivero.country || 'AR')}
@@ -417,14 +419,14 @@ const MobileView: React.FC<any> = ({
 
                 <div>
                   <span className="text-[7px] text-[#8E877F] font-black uppercase tracking-[0.2em] block mb-0.5 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[8px] text-[#D4AF37]">folder_open</span> Ejemplares
+                    <Icon name="folder_open" className="text-[8px] text-[#D4AF37]" /> Ejemplares
                   </span>
                   <span className="text-white text-[10px] font-bold block">{filteredPlants.length} Registrados</span>
                 </div>
 
                 <div>
                   <span className="text-[7px] text-[#8E877F] font-black uppercase tracking-[0.2em] block mb-0.5 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[8px] text-[#D4AF37]">verified</span> Estado
+                    <Icon name="verified" className="text-[8px] text-[#D4AF37]" /> Estado
                   </span>
                   <span className={`text-[10px] font-bold block truncate ${vivero.plan === 'elite' ? 'text-[#D4AF37]' : 'text-white'}`}>
                     {vivero.plan === 'elite' ? 'Verificado Elite' : 'Estándar'}
@@ -747,7 +749,7 @@ const PlantDetailShowroom: React.FC<any> = ({
                 {specs.map((spec, idx) => (
                   <div key={idx} className="group">
                     <div className="flex items-center gap-3 mb-2">
-                      <span className="material-symbols-outlined text-[18px] text-[#D4AF37] opacity-60 group-hover:opacity-100 transition-opacity">{spec.icon}</span>
+                      <Icon name={spec.icon} className="text-[18px] text-[#D4AF37] opacity-60 group-hover:opacity-100 transition-opacity" />
                       <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">{spec.label}</span>
                     </div>
                     <span className="text-lg font-bold text-white/90 group-hover:text-[#D4AF37] transition-colors">{spec.value}</span>
@@ -767,12 +769,12 @@ const PlantDetailShowroom: React.FC<any> = ({
                     onClick={() => setShowContactForm(true)}
                     className="w-full py-6 bg-[#D4AF37] text-white rounded-full font-black uppercase tracking-[0.4em] text-[11px] shadow-2xl hover:bg-white hover:text-black transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3"
                   >
-                    <span className="material-symbols-outlined text-lg">Send</span>
+                    <Icon name="send" className="text-lg" />
                     Consultar Disponibilidad
                   </button>
                 ) : (
                   <div className="w-full py-6 bg-white/[0.05] border border-white/10 text-white/20 rounded-full font-black uppercase tracking-[0.4em] text-[11px] flex items-center justify-center gap-3 cursor-not-allowed">
-                    <span className="material-symbols-outlined text-lg opacity-40">lock</span>
+                    <Icon name="lock" className="text-lg opacity-40" />
                     No Disponible para Venta
                   </div>
                 )}
