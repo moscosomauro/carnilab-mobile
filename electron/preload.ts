@@ -13,10 +13,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     receive: (channel: string, func: (...args: any[]) => void) => {
         let validChannels = ['fromMain', 'main-process-message'];
         if (validChannels.includes(channel)) {
-            // Deliberately strip event as it includes `sender` 
+            // Deliberately strip event as it includes `sender`
             ipcRenderer.on(channel, (_event, ...args) => func(...args));
         }
-    }
+    },
+    // Info del servidor de sincronización local (IP, puerto, token) para el QR
+    getSyncInfo: (): Promise<{ ip: string; port: number; token: string; url: string }> =>
+        ipcRenderer.invoke('sync:getInfo'),
+    isElectron: true,
 });
 
 console.log('Preload script loaded');

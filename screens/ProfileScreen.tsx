@@ -138,6 +138,20 @@ const ProfileScreen: React.FC = () => {
                         </div>
                     </div>
 
+                    {/* Sincronizar dispositivos */}
+                    <button
+                        onClick={() => navigate('/sync')}
+                        className="bg-white rounded-[24px] dark:bg-slate-800 p-4 flex items-center gap-4 shadow-sm border border-white dark:border-slate-700 active:scale-95 transition-transform cursor-pointer h-fit"
+                    >
+                        <div className="w-10 h-10 rounded-full bg-[#EFEBE4] flex items-center justify-center text-[#4A5D4F]">
+                            <Icon name="sync" />
+                        </div>
+                        <div className="text-left">
+                            <h3 className="font-bold text-[#2E2E2E] dark:text-white text-sm">Sincronizar</h3>
+                            <p className="text-[10px] text-[#8E877F] dark:text-slate-400 font-bold">Entre PC e iPhone por Wi-Fi</p>
+                        </div>
+                    </button>
+
                     {/* Backup */}
                     <button
                         onClick={() => navigate('/backup')}

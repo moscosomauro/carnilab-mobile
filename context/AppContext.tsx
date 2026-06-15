@@ -4,7 +4,9 @@ import { useAuth } from './AuthContext';
 import { logger } from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { objectiveEvents } from '../utils/dailyObjectives';
-import { loadTable, saveTable, migrateFromLocalStorage, TableKey } from '../db/localDb';
+import { loadTable, saveTable, migrateFromLocalStorage, addTombstone, TableKey } from '../db/localDb';
+import { stamp } from '../db/sync';
+import { syncNow, isPaired } from '../db/syncClient';
 
 // ============================================================
 // APP CONTEXT - 100% LOCAL
@@ -149,6 +151,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await loadFromLocal();
   };
 
+  // Auto-sync por Wi-Fi: al abrir y cada 45s si el dispositivo está emparejado
+  useEffect(() => {
+    if (!user?.isAuthenticated || !isPaired()) return;
+    let cancelled = false;
+    const run = async () => {
+      const r = await syncNow();
+      if (r.ok && !cancelled) await loadFromLocal();
+    };
+    run();
+    const iv = setInterval(run, 45000);
+    return () => { cancelled = true; clearInterval(iv); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
   // ✅ Error Toast Helpers
   const showErrorToast = (message: string) => {
     setErrorToast(message);
@@ -200,7 +216,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addPlant = async (plant: Omit<Plant, 'id'>): Promise<Plant | null> => {
     if (!user) return null;
 
-    const newPlant: Plant = { ...plant, id: makeTempId() };
+    const newPlant: Plant = stamp({ ...plant, id: makeTempId() });
     const newPlants = [newPlant, ...plants];
     setPlants(newPlants);
     saveToLocal('plants', newPlants);
@@ -223,7 +239,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updatePlant = async (plant: Plant): Promise<boolean> => {
     setPlants(prev => {
-      const updated = prev.map(p => p.id === plant.id ? plant : p);
+      const updated = prev.map(p => p.id === plant.id ? stamp(plant) : p);
       saveToLocal('plants', updated);
       return updated;
     });
@@ -236,6 +252,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       saveToLocal('plants', updated);
       return updated;
     });
+    await addTombstone('plants', id);
     return true;
   };
 
@@ -268,12 +285,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       const id = tempId ?? makeTempId();
 
+      const stampedCross = stamp({ ...cleanCross, id, isSyncing: false });
       setCrosses(prev => {
         // Si venía un tempId (reintento), reemplazar; si no, agregar
         const exists = prev.some((c: any) => c.id === id);
         const updated = exists
-          ? prev.map((c: any) => c.id === id ? { ...cleanCross, id, isSyncing: false } : c)
-          : [{ ...cleanCross, id, isSyncing: false }, ...prev];
+          ? prev.map((c: any) => c.id === id ? stampedCross : c)
+          : [stampedCross, ...prev];
         saveToLocal('crosses', updated);
         return updated;
       });
@@ -295,7 +313,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const justCompleted = cross.estado === 'completada' && previousCross?.estado !== 'completada';
 
     setCrosses(prev => {
-      const updated = prev.map(c => c.id === cross.id ? cross : c);
+      const updated = prev.map(c => c.id === cross.id ? stamp(cross) : c);
       saveToLocal('crosses', updated);
       return updated;
     });
@@ -312,13 +330,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       saveToLocal('crosses', updated);
       return updated;
     });
+    await addTombstone('crosses', id);
     return true;
   };
 
   const addDiaryEntry = async (entry: Omit<DiaryEntry, 'id'>): Promise<boolean> => {
     if (!user) return false;
 
-    const newEntry: DiaryEntry = { ...entry, id: makeTempId() };
+    const newEntry: DiaryEntry = stamp({ ...entry, id: makeTempId() });
     setDiary(prev => {
       const updated = [newEntry, ...prev];
       saveToLocal('diary', updated);
@@ -335,7 +354,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateDiaryEntry = async (entry: DiaryEntry): Promise<boolean> => {
     setDiary(prev => {
-      const updated = prev.map(e => e.id === entry.id ? entry : e);
+      const updated = prev.map(e => e.id === entry.id ? stamp(entry) : e);
       saveToLocal('diary', updated);
       return updated;
     });
@@ -348,13 +367,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       saveToLocal('diary', updated);
       return updated;
     });
+    await addTombstone('diary', id);
     return true;
   };
 
   const addAlert = async (newAlert: Omit<Alert, 'id'>): Promise<boolean> => {
     if (!user) return false;
 
-    const alert: Alert = { ...newAlert, id: makeTempId(), notified: false, completada: false };
+    const alert: Alert = stamp({ ...newAlert, id: makeTempId(), notified: false, completada: false });
     setAlerts(prev => {
       const updated = [alert, ...prev];
       saveToLocal('alerts', updated);
@@ -365,7 +385,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const completeAlert = async (id: number): Promise<boolean> => {
     setAlerts(prev => {
-      const updated = prev.map(a => a.id === id ? { ...a, completada: true } : a);
+      const updated = prev.map(a => a.id === id ? stamp({ ...a, completada: true }) : a);
       saveToLocal('alerts', updated);
       return updated;
     });
@@ -382,13 +402,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       saveToLocal('alerts', updated);
       return updated;
     });
+    await addTombstone('alerts', id);
     return true;
   };
 
   const addClimateLog = async (log: Omit<ClimateLog, 'id'>): Promise<boolean> => {
     if (!user) return false;
 
-    const newLog: ClimateLog = { ...log, id: makeTempId() };
+    const newLog: ClimateLog = stamp({ ...log, id: makeTempId() });
     setClimateLogs(prev => {
       const updated = [newLog, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       saveToLocal('climate', updated);
@@ -403,7 +424,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addSeedBatch = async (batch: Omit<SeedBatch, 'id'>): Promise<boolean> => {
     if (!user) return false;
 
-    const newBatch: SeedBatch = { ...batch, id: makeTempId(), isSyncing: false };
+    const newBatch: SeedBatch = stamp({ ...batch, id: makeTempId(), isSyncing: false });
     setSeedBank(prev => {
       const updated = [newBatch, ...prev];
       saveToLocal('seedbank', updated);
@@ -418,7 +439,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateSeedBatch = async (batch: SeedBatch): Promise<boolean> => {
     setSeedBank(prev => {
-      const updated = prev.map(s => s.id === batch.id ? { ...batch, isSyncing: false } : s);
+      const updated = prev.map(s => s.id === batch.id ? stamp({ ...batch, isSyncing: false }) : s);
       saveToLocal('seedbank', updated);
       return updated;
     });
@@ -431,6 +452,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       saveToLocal('seedbank', updated);
       return updated;
     });
+    await addTombstone('seedbank', id);
     return true;
   };
 

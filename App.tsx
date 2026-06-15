@@ -21,6 +21,7 @@ const CultivarGeneratorScreen = lazy(() => import('./screens/CultivarGeneratorSc
 const QRDesignShowcase = lazy(() => import('./screens/QRDesignShowcase').then(m => ({ default: m.QRDesignShowcase })));
 const SeedBankScreen = lazy(() => import('./screens/SeedBankScreen'));
 const LabScreen = lazy(() => import('./screens/Lab'));
+const SyncScreen = lazy(() => import('./screens/SyncScreen'));
 
 // Non-lazy components (always needed)
 import { NotificationToast } from './components/NotificationToast';
@@ -117,6 +118,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/lab" element={<LabScreen />} />
         <Route path="/genealogy/:id" element={<GenealogyScreen />} />
         <Route path="/qr-design" element={<QRDesignShowcase />} />
+        <Route path="/sync" element={<SyncScreen />} />
 
         {/* Cualquier ruta desconocida vuelve al dashboard */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

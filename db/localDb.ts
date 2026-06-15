@@ -9,6 +9,16 @@
 import Dexie, { Table } from 'dexie';
 import { Plant, Cross, Alert, DiaryEntry, ClimateLog, SeedBatch } from '../types';
 
+// Lápida de un registro borrado: permite propagar el borrado a otros
+// dispositivos durante la sincronización (si solo lo elimináramos, el otro
+// dispositivo lo volvería a agregar en el próximo sync).
+export interface Tombstone {
+  key: string;        // `${table}:${id}`
+  table: string;
+  recordId: number;
+  deletedAt: number;  // ms
+}
+
 class CarniLabDB extends Dexie {
   plants!: Table<Plant, number>;
   crosses!: Table<Cross, number>;
@@ -16,10 +26,11 @@ class CarniLabDB extends Dexie {
   diary!: Table<DiaryEntry, number>;
   climate!: Table<ClimateLog, number>;
   seedbank!: Table<SeedBatch, number>;
+  tombstones!: Table<Tombstone, string>;
 
   constructor() {
     super('carnilab');
-    // La clave primaria es 'id' (number) en todas las tablas.
+    // La clave primaria es 'id' (number) en todas las tablas de datos.
     this.version(1).stores({
       plants: 'id',
       crosses: 'id',
@@ -27,6 +38,10 @@ class CarniLabDB extends Dexie {
       diary: 'id',
       climate: 'id',
       seedbank: 'id',
+    });
+    // v2: tabla de lápidas para sincronización (Fase 4)
+    this.version(2).stores({
+      tombstones: 'key',
     });
   }
 }
@@ -81,8 +96,24 @@ export async function migrateFromLocalStorage(userKey: string): Promise<boolean>
 
 // Borra todos los datos locales (usado por "borrar y reimportar limpio")
 export async function clearAllData(): Promise<void> {
-  const tables = ALL_TABLES.map(t => (db as any)[t]);
+  const tables = [...ALL_TABLES.map(t => (db as any)[t]), db.tombstones];
   await db.transaction('rw', tables, async () => {
     await Promise.all(tables.map(t => t.clear()));
+  });
+}
+
+// --- Tombstones (sincronización) ---
+export async function addTombstone(table: TableKey, recordId: number): Promise<void> {
+  await db.tombstones.put({ key: `${table}:${recordId}`, table, recordId, deletedAt: Date.now() });
+}
+
+export async function loadTombstones(): Promise<Tombstone[]> {
+  return db.tombstones.toArray();
+}
+
+export async function saveTombstones(items: Tombstone[]): Promise<void> {
+  await db.transaction('rw', db.tombstones, async () => {
+    await db.tombstones.clear();
+    if (items.length) await db.tombstones.bulkPut(items);
   });
 }

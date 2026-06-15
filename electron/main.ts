@@ -1,6 +1,7 @@
-import { app, BrowserWindow, screen } from 'electron';
+import { app, BrowserWindow, screen, ipcMain } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { startSyncServer, getSyncInfo } from './syncServer';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -69,4 +70,15 @@ app.on('activate', () => {
     }
 });
 
-app.whenReady().then(createWindow);
+// Exponer info del servidor de sync al renderer (para mostrar el QR)
+ipcMain.handle('sync:getInfo', () => getSyncInfo());
+
+app.whenReady().then(() => {
+  // Arrancar el servidor de sincronización local (Wi-Fi)
+  try {
+    startSyncServer(app.getPath('userData'), process.env.DIST);
+  } catch (e) {
+    console.error('No se pudo iniciar el servidor de sync:', e);
+  }
+  createWindow();
+});
