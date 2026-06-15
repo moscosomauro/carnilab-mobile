@@ -10,6 +10,16 @@
   --color-brand-secondary: #5F603E;     /* Verde Oliva Oscuro */
   --color-brand-accent: #A8323E;        /* Rojo Vino */
   --color-brand-text-on-primary: #ffffff;
+
+  /* === Rediseño 2026 (app de escritorio) === */
+  --color-sidebar: #2B0E13;             /* Borgoña casi negro (menú lateral) */
+  --color-sidebar-active: #7A1E2C;      /* Item activo */
+  --color-sidebar-text: #C9B5A6;        /* Texto del menú (crema apagado) */
+  --color-sidebar-hover: #3D161C;       /* Hover del menú */
+  --color-app-bg: #F6F2EA;              /* Fondo del área de contenido (crema cálido) */
+  --color-app-card: #ffffff;            /* Tarjetas */
+  --color-app-border: #ECE4D6;          /* Bordes sutiles */
+  --color-topbar: #FBF8F2;              /* Barra superior */
 }
 
 /* Modo Oscuro Sarracenias MAR (Fondo Oscuro Principal) */
@@ -22,6 +32,16 @@ html.dark, :root.dark {
   --color-brand-secondary: #5F603E;     /* Verde Oliva Oscuro */
   --color-brand-accent: #A8323E;        /* Rojo Vino */
   --color-brand-text-on-primary: #ffffff;
+
+  /* === Rediseño 2026 (modo oscuro) === */
+  --color-sidebar: #1C0A0D;
+  --color-sidebar-active: #7A1E2C;
+  --color-sidebar-text: #C9B5A6;
+  --color-sidebar-hover: #2B0E13;
+  --color-app-bg: #14110F;
+  --color-app-card: #1E1B18;
+  --color-app-border: #2E2A25;
+  --color-topbar: #1A1714;
 }
 
 /* Reglas de fuentes globales según branding */

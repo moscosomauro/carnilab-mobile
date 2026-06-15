@@ -1,253 +1,262 @@
-
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { useApp } from "../context/AppContext";
 import { useAuth } from "../context/AuthContext";
-import { useTheme } from "../context/ThemeContext";
-import { Pencil } from "lucide-react";
+import { AreaChart, Area, ResponsiveContainer } from "recharts";
+import {
+  Droplets, Scissors, FlaskConical, Eye, Bell, Sprout, Network, Package,
+  AlertTriangle, Bot, Plus, NotebookPen, CloudSun, Check, ChevronRight, LayoutDashboard
+} from "lucide-react";
 
-// ---------- UI helpers ----------
-
-// Asset Icon Helper
-import { AssetIcon } from "../components/AssetIcon";
-import { SmartDashboardWidget } from "../components/SmartDashboardWidget";
-
-
-type MenuItem = {
-  title: string;
-  icon: React.ReactNode;
-  bg: string;
-  path: string;
-  plan: "basic" | "pro" | "elite";
-  badge?: number;
+const tipoIcon: Record<string, React.ReactNode> = {
+  riego: <Droplets size={16} />,
+  fertilizacion: <FlaskConical size={16} />,
+  poda: <Scissors size={16} />,
+  observacion: <Eye size={16} />,
 };
 
-const Dashboard = () => {
-  const { t, i18n } = useTranslation();
+const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { plants, alerts, crosses } = useApp();
-  const { user, updateUserLabel } = useAuth();
-  const { currentLogo } = useTheme();
+  const { plants, crosses, alerts, diary, seedBank, climateLogs, completeAlert } = useApp();
+  const { user } = useAuth();
 
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [newProfileName, setNewProfileName] = useState(user?.label || "");
+  const today = new Date();
+  const endOfToday = new Date(today); endOfToday.setHours(23, 59, 59, 999);
 
-  const pendingAlerts = alerts.filter((a) => !a.completada).length;
+  // Tareas: alertas no completadas, vencidas o de hoy, ordenadas por fecha
+  const tareas = useMemo(() =>
+    alerts
+      .filter(a => !a.completada)
+      .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
+      .slice(0, 6),
+    [alerts]);
 
-  const menuItems: MenuItem[] = useMemo(() => [
-    { title: "CarniBot", icon: <AssetIcon name="icon-bot" size={48} />, bg: "var(--color-brand-accent)", path: "/ai", plan: "elite" },
-    { title: t('layout.menu.addPlant'), icon: <AssetIcon name="icon-add" size={48} />, bg: "var(--color-brand-primary)", path: "/add", plan: "basic" },
-    { title: t('layout.menu.myPlants'), icon: <AssetIcon name="icon-plants" size={48} />, bg: "var(--color-brand-primary)", path: "/plants", plan: "basic" },
-    { title: t('layout.menu.diary'), icon: <AssetIcon name="icon-diary" size={48} />, bg: "var(--color-brand-secondary)", path: "/diary", plan: "basic" },
-    { title: t('layout.menu.crosses'), icon: <AssetIcon name="icon-crosses" size={48} />, bg: "var(--color-brand-secondary)", path: "/crosses", plan: "basic" },
-    { title: "Banco Semillas", icon: <AssetIcon name="icon-bank-seed" size={48} />, bg: "var(--color-brand-primary)", path: "/seed-bank", plan: "basic" },
-    { title: t('dashboard.menu.climate'), icon: <AssetIcon name="icon-climate" size={48} />, bg: "var(--color-brand-accent)", path: "/climate", plan: "pro" },
-    { title: t('dashboard.menu.alerts'), icon: <AssetIcon name="icon-alerts" size={48} />, bg: "var(--color-brand-accent)", path: "/alerts", plan: "basic", badge: pendingAlerts },
-    { title: t('dashboard.menu.backup'), icon: <AssetIcon name="icon-backup" size={48} />, bg: "var(--color-brand-secondary)", path: "/backup", plan: "basic" },
-    { title: t('dashboard.menu.calculator'), icon: <AssetIcon name="icon-genlab" size={48} />, bg: "var(--color-brand-accent)", path: "/lab", plan: "pro" },
-  ], [pendingAlerts, user, t]);
+  // Requiere atención
+  const semillasEstrat = useMemo(() =>
+    seedBank.filter(s => s.estado === 'estratificando'), [seedBank]);
+  const cruzasProceso = useMemo(() =>
+    crosses.filter(c => c.estado === 'en_proceso'), [crosses]);
+  const plantasRiesgo = useMemo(() =>
+    plants.filter(p => p.estado === 'regular' || p.estado === 'critico'), [plants]);
 
-  // App local: todas las funciones están desbloqueadas
-  const handleNavigation = (path: string, _plan: string) => {
-    navigate(path);
+  const actividad = useMemo(() =>
+    [...diary].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()).slice(0, 4),
+    [diary]);
+
+  const alertasPendientes = alerts.filter(a => !a.completada).length;
+  const lastClimate = climateLogs[0];
+  const climaData = useMemo(() =>
+    [...climateLogs].slice(0, 12).reverse().map(c => ({ t: c.temp_max })), [climateLogs]);
+
+  const fmtFecha = (f: string) => {
+    const d = new Date(f);
+    const venc = d.getTime() < today.getTime();
+    return { txt: d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }), venc };
   };
 
-  const handleSaveProfileName = async () => {
-    if (!newProfileName.trim()) return;
-    const success = await updateUserLabel(newProfileName);
-    if (success) setIsEditingProfile(false);
-  };
+  const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = "" }) => (
+    <div className={`bg-app-card border border-app-border rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] ${className}`}>
+      {children}
+    </div>
+  );
+
+  const SectionTitle: React.FC<{ icon: React.ReactNode; children: React.ReactNode; action?: () => void }> = ({ icon, children, action }) => (
+    <div className="flex items-center justify-between px-5 pt-4 pb-3">
+      <h3 className="flex items-center gap-2 text-[13px] font-black uppercase tracking-wider text-brand-primary">
+        {icon} {children}
+      </h3>
+      {action && <button onClick={action} className="text-brand-dark/30 hover:text-brand-dark/60"><ChevronRight size={18} /></button>}
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-transparent flex justify-center font-sans lg:bg-transparent">
-      {/* Paper texture */}
-
-      <div className="relative z-10 w-full max-w-[390px] lg:max-w-6xl px-6 pt-6 pb-28 lg:pb-10">
-
-        {/* DATE & CONNECTION STATUS */}
-        <div className="flex justify-between items-center mb-2">
-          <div className="text-xs text-[#8E877F] font-medium capitalize">
-            {new Date().toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long' })}
-          </div>
-
-        </div>
-
-        {/* LOGO */}
-        <div className="flex flex-col items-center justify-center gap-1 mb-8">
-          <div className="w-24 h-24 rounded-3xl bg-white flex items-center justify-center shadow-lg shadow-black/5 mb-3 border border-gray-50 overflow-hidden">
-            <img src={currentLogo} alt="CarniLab Logo" className="w-20 h-20 object-contain scale-110" />
-          </div>
-          <h1 className="text-3xl font-bold text-brand-dark tracking-tight">
-            CarniLab
-          </h1>
-          <p className="text-xs font-bold text-brand-accent uppercase tracking-[0.2em]">
-            {t('dashboard.slogan')}
+    <div className="px-4 lg:px-8 py-6 max-w-[1400px] mx-auto">
+      {/* Título */}
+      <div className="flex items-center gap-3 mb-6">
+        <LayoutIcon />
+        <div>
+          <h1 className="font-accent text-3xl font-bold text-brand-dark leading-none">Dashboard</h1>
+          <p className="text-[12px] text-brand-dark/50 font-medium mt-1">
+            Hola {user?.label?.split(' ')[0] || ''}, esto es lo que necesita tu colección hoy
           </p>
         </div>
+      </div>
 
-        {/* PROFILE CARD */}
-        <div
-          className="bg-brand-surface/90 backdrop-blur-xl shadow-soft
-                             border border-brand-light/20 flex items-center gap-4 px-4 py-3 mb-8 lg:px-8 lg:py-6 rounded-blob"
-        >
-          <div className="w-20 h-20 rounded-full border-4 border-brand-surface shadow-md overflow-hidden bg-brand-bg/50 flex items-center justify-center">
-            {user?.avatar_url ? (
-              <img
-                src={user.avatar_url}
-                className="w-full h-full object-cover"
-                alt="Profile"
-              />
-            ) : (
-              <span className="text-2xl font-black text-brand-dark/40">{user?.label?.charAt(0).toUpperCase()}</span>
-            )}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-[22px] font-bold text-brand-dark">
-                {user?.label || "Mauro"}
-              </h2>
-              <button onClick={() => setIsEditingProfile(true)} className="opacity-60 hover:opacity-100 transition-opacity">
-                <Pencil size={14} className="text-brand-dark" />
-              </button>
-            </div>
-            <div className="text-[11px] uppercase tracking-widest text-brand-dark/60 font-bold flex items-center gap-1.5 mt-0.5">
-              <span className="text-brand-accent opacity-60">🌿</span>
-              <span>{t('dashboard.ownerTitle')}</span>
-            </div>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* ===== Columna principal ===== */}
+        <div className="lg:col-span-2 space-y-6">
 
-        <div className="grid grid-cols-4 gap-4 mb-4 lg:grid-cols-8 lg:mb-8">
-          <button onClick={() => handleNavigation('/lab', 'pro')} className="flex flex-col items-center gap-2">
-            <div className="w-20 h-20 lg:w-28 lg:h-28 rounded-2xl bg-brand-surface flex items-center justify-center shadow-sm border border-brand-light/15 overflow-hidden relative">
-              <AssetIcon name="icon-genlab" size={80} className="lg:scale-125" />
-            </div>
-            <span className="text-[10px] lg:text-xs font-bold text-brand-dark/80 leading-tight text-center">{t('dashboard.genLab')}</span>
-          </button>
-
-          <button onClick={() => handleNavigation('/qr-design', 'elite')} className="flex flex-col items-center gap-2">
-            <div className="w-20 h-20 lg:w-28 lg:h-28 rounded-2xl bg-brand-surface flex items-center justify-center shadow-sm border border-brand-light/15 overflow-hidden relative">
-              <AssetIcon name="icon-scanner" size={80} className="lg:scale-125" />
-            </div>
-            <span className="text-[10px] lg:text-xs font-bold text-brand-dark/80 leading-tight text-center">{t('dashboard.scanner')}</span>
-          </button>
-        </div>
-
-        {/* STATS */}
-        <div className="flex gap-3 mb-8">
-          {[
-            { t: "Plants", v: plants.length, s: t('dashboard.stats.plants'), bg: "var(--color-brand-primary)", tx: "text-white" },
-            { t: "Cruzas", v: crosses.length, s: t('dashboard.stats.crosses'), bg: "var(--color-brand-secondary)", tx: "text-white" },
-            { t: "Alerts", v: pendingAlerts, s: t('dashboard.stats.alerts'), bg: "var(--color-brand-accent)", tx: "text-white" },
-          ].map((c, i) => (
-            <div
-              key={i}
-              className="flex-1 text-center py-6 shadow-md border border-white/20 rounded-[36px]"
-              style={{
-                background: c.bg,
-              }}
-            >
-              <div className={`text-[9px] uppercase tracking-[0.25em] font-black opacity-50 ${c.tx}`}>
-                {c.t}
-              </div>
-              <div className={`text-2xl font-black mt-1 ${c.tx}`}>{c.v}</div>
-              <div className={`text-[10px] font-semibold opacity-70 ${c.tx}`}>
-                {c.s}
-              </div>
-            </div>
-          ))}
-        </div>
-
-
-
-        <SmartDashboardWidget seedBank={useApp().seedBank} crosses={crosses} plants={plants} />
-
-        {/* MENU */}
-        <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:items-start">
-          {menuItems.map((m, i) => (
-            <button
-              key={i}
-              onClick={() => handleNavigation(m.path, m.plan)}
-              className="h-14 flex items-center px-2 shadow-md border border-white/40
-                                     active:scale-[0.985] transition-transform relative group rounded-full"
-              style={{
-                background: m.bg,
-              }}
-            >
-              <div className={`flex items-center justify-center ml-2 ${['var(--color-brand-primary)', 'var(--color-brand-secondary)'].includes(m.bg) ? 'text-[var(--color-brand-text-on-primary)]' : 'text-[var(--color-brand-dark)]'}`}>
-                {m.icon}
-              </div>
-              <span className={`flex-1 text-left pl-4 font-semibold text-[15px] tracking-wide ${['var(--color-brand-primary)', 'var(--color-brand-secondary)'].includes(m.bg) ? 'text-[var(--color-brand-text-on-primary)]' : 'text-[var(--color-brand-dark)]'}`}>
-                {m.title}
-              </span>
-              <span className={`mr-4 opacity-30 text-lg ${['var(--color-brand-primary)', 'var(--color-brand-secondary)'].includes(m.bg) ? 'text-[var(--color-brand-text-on-primary)]' : ''}`}>›</span>
-              {m.badge !== undefined && m.badge > 0 && (
-                <div className="absolute -top-1 right-10 bg-[#FF4D4D] text-white text-[9px] font-black px-2 py-0.5 rounded-full border border-white shadow-lg">
-                  {m.badge}
-                </div>
+          {/* Tareas de hoy */}
+          <Card>
+            <SectionTitle icon={<Bell size={15} />} action={() => navigate('/alerts')}>Tareas de hoy</SectionTitle>
+            <div className="divide-y divide-app-border">
+              {tareas.length === 0 && (
+                <p className="px-5 py-8 text-center text-[13px] text-brand-dark/40">Sin tareas pendientes. ¡Todo al día! 🌿</p>
               )}
-            </button>
-          ))}
+              {tareas.map(a => {
+                const f = fmtFecha(a.fecha);
+                return (
+                  <div key={a.id} className="flex items-center gap-3 px-5 py-3">
+                    <div className="w-9 h-9 rounded-lg bg-brand-primary/8 text-brand-primary flex items-center justify-center shrink-0">
+                      {tipoIcon[a.tipo?.toLowerCase()] || <Bell size={16} />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-bold text-brand-dark truncate">{a.mensaje}</p>
+                      <p className="text-[11px] text-brand-dark/50 truncate">{a.planta}</p>
+                    </div>
+                    <span className={`text-[11px] font-bold px-2 py-1 rounded-md ${f.venc ? 'bg-red-50 text-red-600' : 'bg-app-bg text-brand-dark/60'}`}>
+                      {f.venc ? 'Vencida' : f.txt}
+                    </span>
+                    <button
+                      onClick={() => completeAlert(a.id)}
+                      className="w-8 h-8 rounded-lg bg-brand-secondary/10 text-brand-secondary hover:bg-brand-secondary hover:text-white flex items-center justify-center transition-colors shrink-0"
+                      title="Marcar como hecha"
+                    >
+                      <Check size={15} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
 
+          {/* Requiere atención */}
+          <Card>
+            <SectionTitle icon={<AlertTriangle size={15} />}>Requiere atención</SectionTitle>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-app-border">
+              <AttentionCol icon={<Package size={16} />} label="Estratificando" items={semillasEstrat.map(s => s.nombre)} empty="Sin lotes activos" onClick={() => navigate('/seed-bank')} />
+              <AttentionCol icon={<Network size={16} />} label="Cruzas en proceso" items={cruzasProceso.map(c => c.nombre)} empty="Sin cruzas activas" onClick={() => navigate('/crosses')} />
+              <AttentionCol icon={<Sprout size={16} />} label="Plantas en riesgo" items={plantasRiesgo.map(p => p.nombre)} empty="Todas saludables" onClick={() => navigate('/plants')} danger />
+            </div>
+          </Card>
+
+          {/* Actividad reciente */}
+          <Card>
+            <SectionTitle icon={<NotebookPen size={15} />} action={() => navigate('/diary')}>Actividad reciente</SectionTitle>
+            <div className="divide-y divide-app-border">
+              {actividad.length === 0 && (
+                <p className="px-5 py-8 text-center text-[13px] text-brand-dark/40">Sin entradas en el diario todavía</p>
+              )}
+              {actividad.map(e => {
+                const img = e.imagen || e.imagenes?.[0];
+                return (
+                  <div key={e.id} className="flex items-center gap-3 px-5 py-3">
+                    <div className="w-11 h-11 rounded-lg bg-app-bg overflow-hidden shrink-0 flex items-center justify-center">
+                      {img ? <img src={img} alt="" className="w-full h-full object-cover" /> : <NotebookPen size={16} className="text-brand-dark/20" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-bold text-brand-dark truncate">{e.planta_nombre}</p>
+                      <p className="text-[11px] text-brand-dark/50 truncate capitalize">{e.tipo} · {e.descripcion}</p>
+                    </div>
+                    <span className="text-[11px] text-brand-dark/40">{new Date(e.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+
+          {/* Accesos rápidos */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <QuickAction icon={<Plus size={18} />} label="Nueva planta" primary onClick={() => navigate('/add')} />
+            <QuickAction icon={<NotebookPen size={18} />} label="Nueva entrada" onClick={() => navigate('/diary')} />
+            <QuickAction icon={<Bot size={18} />} label="CarniBot" onClick={() => navigate('/ai')} />
+          </div>
+        </div>
+
+        {/* ===== Panel derecho ===== */}
+        <div className="space-y-6">
+          {/* Clima de hoy */}
+          <Card className="p-5">
+            <h3 className="flex items-center gap-2 text-[13px] font-black uppercase tracking-wider text-brand-primary mb-3">
+              <CloudSun size={15} /> Clima de hoy
+            </h3>
+            {lastClimate ? (
+              <>
+                <div className="flex items-end gap-4 mb-3">
+                  <div>
+                    <p className="text-3xl font-black text-brand-dark leading-none">{Math.round(lastClimate.temp_max)}°<span className="text-lg">C</span></p>
+                    <p className="text-[11px] text-brand-dark/50 mt-1">Temperatura</p>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-black text-brand-secondary leading-none">{lastClimate.humidity}<span className="text-lg">%</span></p>
+                    <p className="text-[11px] text-brand-dark/50 mt-1">Humedad</p>
+                  </div>
+                </div>
+                {climaData.length > 1 && (
+                  <div className="h-16 -mx-1">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={climaData}>
+                        <defs>
+                          <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="var(--color-brand-primary)" stopOpacity={0.3} />
+                            <stop offset="100%" stopColor="var(--color-brand-primary)" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <Area type="monotone" dataKey="t" stroke="var(--color-brand-primary)" strokeWidth={2} fill="url(#g)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </>
+            ) : (
+              <button onClick={() => navigate('/climate')} className="text-[12px] text-brand-primary font-bold">Registrar clima →</button>
+            )}
+          </Card>
+
+          {/* Números */}
+          <div className="grid grid-cols-2 gap-3">
+            <StatBox value={plants.length} label="Plantas" icon={<Sprout size={16} />} onClick={() => navigate('/plants')} />
+            <StatBox value={cruzasProceso.length} label="Cruzas activas" icon={<Network size={16} />} onClick={() => navigate('/crosses')} />
+            <StatBox value={semillasEstrat.length} label="Estratificando" icon={<Package size={16} />} onClick={() => navigate('/seed-bank')} />
+            <StatBox value={alertasPendientes} label="Alertas" icon={<Bell size={16} />} danger={alertasPendientes > 0} onClick={() => navigate('/alerts')} />
+          </div>
         </div>
       </div>
-
-      {/* BOTTOM NAV */}
-      <div className="fixed bottom-0 left-0 right-0 bg-brand-surface/80 backdrop-blur-xl
-                            border-t border-brand-light/20 px-10 py-5 flex justify-between z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] lg:hidden">
-        {[
-          { l: t('dashboard.bottomNav.home'), ic: <AssetIcon name="icon-home" size={24} />, act: true, path: "/dashboard" },
-          { l: t('layout.menu.myPlants'), ic: <AssetIcon name="icon-plants" size={24} />, act: false, path: "/plants" },
-          { l: t('layout.menu.diary'), ic: <AssetIcon name="icon-diary" size={24} />, act: false, path: "/diary" },
-          { l: t('dashboard.bottomNav.profile'), ic: <AssetIcon name="icon-profile" size={24} />, act: false, path: "/profile" },
-        ].map((t, i) => (
-          <div
-            key={i}
-            onClick={() => navigate(t.path)}
-            className={`flex flex-col items-center gap-1 cursor-pointer active:scale-90 transition-transform
-                        ${t.act ? "text-brand-primary" : "text-brand-light/50"}`}
-          >
-            <div className={`flex items-center justify-center scale-110 ${!t.act ? "opacity-40" : ""}`}>
-              {t.ic}
-            </div>
-            <span className="text-[10px] font-bold uppercase tracking-widest">{t.l}</span>
-          </div>
-        ))}
-      </div>
-
-
-
-      {isEditingProfile && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-6 animate-in fade-in duration-200">
-          <div className="bg-brand-surface rounded-modal p-7 w-full max-w-xs shadow-float border border-brand-light/20 translate-y-[-20px]">
-            <h3 className="text-xl font-bold text-brand-dark mb-4">{t('dashboard.editProfile.title')}</h3>
-            <input
-              autoFocus
-              type="text"
-              value={newProfileName}
-              onChange={(e) => setNewProfileName(e.target.value)}
-              className="w-full bg-brand-bg/50 border border-brand-light/30 rounded-2xl p-4 text-brand-dark mb-6 font-bold outline-none focus:ring-2 focus:ring-brand-primary/20"
-            />
-            <div className="flex gap-4">
-              <button
-                onClick={() => setIsEditingProfile(false)}
-                className="flex-1 py-3 text-brand-dark/60 font-bold rounded-xl hover:bg-black/5 transition-colors"
-              >
-                {t('dashboard.editProfile.cancel')}
-              </button>
-              <button
-                onClick={handleSaveProfileName}
-                className="flex-1 py-3 bg-brand-primary text-white rounded-xl font-bold shadow-lg shadow-brand-primary/20 hover:brightness-[1.03] transition"
-              >
-                {t('dashboard.editProfile.save')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
+
+const LayoutIcon = () => (
+  <div className="w-11 h-11 rounded-xl bg-brand-primary/10 text-brand-primary flex items-center justify-center">
+    <LayoutDashboard size={22} />
+  </div>
+);
+
+const AttentionCol: React.FC<{ icon: React.ReactNode; label: string; items: string[]; empty: string; onClick: () => void; danger?: boolean }> =
+  ({ icon, label, items, empty, onClick, danger }) => (
+    <button onClick={onClick} className="bg-app-card text-left p-4 hover:bg-app-bg/50 transition-colors">
+      <div className={`flex items-center gap-2 text-[11px] font-black uppercase tracking-wide mb-2 ${danger ? 'text-red-600' : 'text-brand-secondary'}`}>
+        {icon} {label}
+        <span className="ml-auto text-base font-black">{items.length}</span>
+      </div>
+      <div className="space-y-1">
+        {items.length === 0
+          ? <p className="text-[11px] text-brand-dark/35">{empty}</p>
+          : items.slice(0, 3).map((n, i) => <p key={i} className="text-[12px] text-brand-dark/70 truncate">· {n}</p>)}
+        {items.length > 3 && <p className="text-[11px] text-brand-dark/40">+{items.length - 3} más</p>}
+      </div>
+    </button>
+  );
+
+const QuickAction: React.FC<{ icon: React.ReactNode; label: string; onClick: () => void; primary?: boolean }> =
+  ({ icon, label, onClick, primary }) => (
+    <button
+      onClick={onClick}
+      className={`flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-[13px] transition-all active:scale-95 ${primary
+        ? 'bg-brand-primary text-white shadow-lg shadow-brand-primary/20 hover:brightness-110'
+        : 'bg-app-card border border-app-border text-brand-dark hover:bg-app-bg'}`}
+    >
+      {icon} {label}
+    </button>
+  );
+
+const StatBox: React.FC<{ value: number; label: string; icon: React.ReactNode; onClick: () => void; danger?: boolean }> =
+  ({ value, label, icon, onClick, danger }) => (
+    <button onClick={onClick} className="bg-app-card border border-app-border rounded-2xl p-4 text-left hover:bg-app-bg/50 transition-colors">
+      <div className={`${danger ? 'text-red-500' : 'text-brand-secondary'} mb-2`}>{icon}</div>
+      <p className="text-2xl font-black text-brand-dark leading-none">{value}</p>
+      <p className="text-[11px] text-brand-dark/50 font-medium mt-1">{label}</p>
+    </button>
+  );
 
 export default Dashboard;

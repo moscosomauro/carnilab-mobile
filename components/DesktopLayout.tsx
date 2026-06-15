@@ -1,110 +1,162 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Icon } from './Icon';
-
-
+import { useAuth } from '../context/AuthContext';
+import { useApp } from '../context/AppContext';
+import {
+    LayoutDashboard, Sprout, NotebookPen, Network, FlaskConical,
+    Package, Bell, CloudSun, Bot, DatabaseBackup, Settings,
+    Search, Menu, X
+} from 'lucide-react';
 
 interface DesktopLayoutProps {
     children: React.ReactNode;
 }
 
+interface NavItem {
+    name: string;
+    icon: React.ReactNode;
+    path: string;
+}
+
 export const DesktopLayout: React.FC<DesktopLayoutProps> = ({ children }) => {
-    const { t } = useTranslation();
-    const { user } = useAuth();
     const { currentLogo } = useTheme();
+    const { user } = useAuth();
+    const { climateLogs } = useApp();
     const navigate = useNavigate();
     const location = useLocation();
+    const [drawerOpen, setDrawerOpen] = useState(false);
 
-    const menuItems = [
-        { name: t('layout.menu.dashboard'), icon: 'dashboard', path: '/dashboard' },
-        { name: t('layout.menu.addPlant'), icon: 'add_circle', path: '/add' },
-        { name: t('layout.menu.myPlants'), icon: 'potted_plant', path: '/plants' },
-        { name: t('layout.menu.diary'), icon: 'menu_book', path: '/diary' },
-        { name: t('layout.menu.crosses'), icon: 'hub', path: '/crosses' },
-        { name: 'Banco Semillas', icon: 'eco', path: '/seed-bank' },
-        { name: t('dashboard.menu.alerts'), icon: 'notifications', path: '/alerts' },
-        { name: t('layout.menu.ai'), icon: 'auto_awesome', path: '/ai' },
+    const items: NavItem[] = [
+        { name: 'Inicio', icon: <LayoutDashboard size={20} />, path: '/dashboard' },
+        { name: 'Plantas', icon: <Sprout size={20} />, path: '/plants' },
+        { name: 'Diario de cultivo', icon: <NotebookPen size={20} />, path: '/diary' },
+        { name: 'Genética y cruzas', icon: <Network size={20} />, path: '/crosses' },
+        { name: 'Gen Lab', icon: <FlaskConical size={20} />, path: '/lab' },
+        { name: 'Banco de semillas', icon: <Package size={20} />, path: '/seed-bank' },
+        { name: 'Alertas', icon: <Bell size={20} />, path: '/alerts' },
+        { name: 'Clima', icon: <CloudSun size={20} />, path: '/climate' },
+        { name: 'CarniBot', icon: <Bot size={20} />, path: '/ai' },
+        { name: 'Backup', icon: <DatabaseBackup size={20} />, path: '/backup' },
+        { name: 'Ajustes', icon: <Settings size={20} />, path: '/profile' },
     ];
 
+    const isActive = (path: string) =>
+        location.pathname === path || (path !== '/dashboard' && location.pathname.startsWith(path));
 
-    if (!user || !user.isAuthenticated) return <>{children}</>;
+    const go = (path: string) => { navigate(path); setDrawerOpen(false); };
+
+    // Último registro de clima (para el widget de la barra superior)
+    const lastClimate = climateLogs[0];
+
+    const SidebarContent = () => (
+        <>
+            {/* Logo */}
+            <div className="flex flex-col items-center px-6 pt-7 pb-5">
+                <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden mb-2">
+                    <img src={currentLogo} alt="CarniLab" className="w-12 h-12 object-contain" />
+                </div>
+                <p className="text-[11px] font-black tracking-[0.25em] text-white uppercase">Sarracenia</p>
+                <p className="text-[8px] font-bold tracking-[0.4em] text-sidebar-text/60 uppercase">MAR</p>
+            </div>
+
+            {/* Navegación */}
+            <nav className="flex-1 overflow-y-auto px-3 space-y-0.5">
+                {items.map(item => {
+                    const active = isActive(item.path);
+                    return (
+                        <button
+                            key={item.path}
+                            onClick={() => go(item.path)}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 ${active
+                                ? 'bg-sidebar-active text-white shadow-lg shadow-black/20'
+                                : 'text-sidebar-text hover:bg-sidebar-hover hover:text-white'
+                                }`}
+                        >
+                            <span className={active ? 'text-white' : 'text-sidebar-text'}>{item.icon}</span>
+                            {item.name}
+                        </button>
+                    );
+                })}
+            </nav>
+
+            {/* Usuario */}
+            <button
+                onClick={() => go('/profile')}
+                className="m-3 mt-2 flex items-center gap-3 px-3 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-white/5"
+            >
+                <div className="w-9 h-9 rounded-full bg-sidebar-active/40 border border-white/10 overflow-hidden flex items-center justify-center shrink-0">
+                    {user?.avatar_url
+                        ? <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+                        : <span className="text-white font-black text-sm">{user?.label?.charAt(0).toUpperCase()}</span>}
+                </div>
+                <div className="text-left min-w-0">
+                    <p className="text-[12px] font-bold text-white truncate">{user?.label}</p>
+                    <p className="text-[9px] text-sidebar-text/70 uppercase tracking-wider">Mi colección</p>
+                </div>
+            </button>
+        </>
+    );
 
     return (
-        <div className="flex min-h-screen bg-transparent">
-            {/* Sidebar - Only visible on LG screens (PC) */}
-            <aside className="hidden lg:flex flex-col w-72 border-r border-white/10 fixed h-screen z-50 overflow-y-auto transition-colors duration-500" style={{ backgroundColor: 'var(--color-brand-secondary)' }}>
-                <div className="p-8">
-                    <div className="flex items-center gap-4 mb-8">
-                        <div className="w-14 h-14 bg-white/10 rounded-xl flex items-center justify-center shadow-sm border border-white/10 overflow-hidden backdrop-blur-sm">
-                            <img src={currentLogo} alt="CarniLab Logo" className="w-12 h-12 object-contain" />
-                        </div>
-                        <div>
-                            <h1 className="text-xl font-black text-white tracking-tight">CarniLab</h1>
-                            <p className="text-[10px] font-bold text-[#F2EDD8] uppercase tracking-[0.2em]">{t('layout.slogan')}</p>
-                        </div>
-                    </div>
-
-
-                    <nav className="space-y-1">
-                        {menuItems.map((item) => {
-                            const isActive = location.pathname === item.path;
-                            return (
-                                <button
-                                    key={item.path}
-                                    onClick={() => navigate(item.path)}
-                                    className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group ${isActive
-                                        ? 'bg-brand-primary text-white shadow-lg shadow-brand-primary/20'
-                                        : 'text-white/60 hover:bg-white/10 hover:text-white'
-                                        }`}
-                                >
-                                    <Icon
-                                        name={item.icon}
-                                        className={`text-4xl ${isActive ? 'text-white' : 'group-hover:scale-110 transition-transform'}`}
-                                    />
-                                    <span className="font-bold text-sm">{item.name}</span>
-                                </button>
-                            );
-                        })}
-                    </nav>
-                </div>
-
-                <div className="mt-auto p-6 border-t border-white/10">
-                    <div className="bg-white/5 rounded-2xl p-4 mb-4 flex items-center gap-3 border border-white/5">
-                        <div className="w-10 h-10 rounded-full border-2 border-white/20 shadow-sm overflow-hidden bg-white/10 flex items-center justify-center">
-                            {user.avatar_url ? (
-                                <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
-                            ) : (
-                                <Icon name="person" className="text-white/50" />
-                            )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-xs font-black text-white truncate uppercase">{user.label}</p>
-                            <div className="flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse" />
-                                <p className="text-[9px] font-bold text-[#F2EDD8] uppercase opacity-60 tracking-wider">
-                                    {t('layout.plan')} {user.plan}
-                                </p>
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => navigate('/profile')}
-                            className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white shadow-sm hover:scale-110 transition-transform"
-                        >
-                            <Icon name="settings" className="text-xl" />
-                        </button>
-                    </div>
-
-                </div>
+        <div className="min-h-screen bg-app-bg text-brand-dark">
+            {/* === Sidebar fijo (desktop) === */}
+            <aside className="hidden lg:flex flex-col fixed inset-y-0 left-0 w-60 bg-sidebar z-40">
+                <SidebarContent />
             </aside>
 
-            {/* Main Content */}
-            <main className="flex-1 lg:ml-72 min-h-screen relative">
-                {children}
-            </main>
+            {/* === Drawer (mobile) === */}
+            {drawerOpen && (
+                <div className="lg:hidden fixed inset-0 z-50 flex">
+                    <div className="absolute inset-0 bg-black/50" onClick={() => setDrawerOpen(false)} />
+                    <aside className="relative flex flex-col w-64 max-w-[80%] bg-sidebar animate-in slide-in-from-left duration-200">
+                        <button onClick={() => setDrawerOpen(false)} className="absolute top-4 right-4 text-sidebar-text">
+                            <X size={20} />
+                        </button>
+                        <SidebarContent />
+                    </aside>
+                </div>
+            )}
+
+            {/* === Contenido === */}
+            <div className="lg:ml-60 flex flex-col min-h-screen">
+                {/* Barra superior */}
+                <header className="sticky top-0 z-30 bg-topbar/90 backdrop-blur-md border-b border-app-border">
+                    <div className="flex items-center gap-3 px-4 lg:px-8 h-16">
+                        <button onClick={() => setDrawerOpen(true)} className="lg:hidden text-brand-dark/70 p-1">
+                            <Menu size={22} />
+                        </button>
+
+                        {/* Buscador */}
+                        <div className="flex-1 max-w-md relative">
+                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-dark/30" />
+                            <input
+                                type="text"
+                                placeholder="Buscar en tu colección…"
+                                className="w-full bg-app-bg/60 border border-app-border rounded-full pl-9 pr-4 py-2 text-[13px] text-brand-dark placeholder:text-brand-dark/30 focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                            />
+                        </div>
+
+                        <div className="flex-1" />
+
+                        {/* Widget de clima */}
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-app-bg/60 border border-app-border">
+                            <CloudSun size={16} className="text-brand-secondary" />
+                            <span className="text-[12px] font-bold text-brand-dark">
+                                {lastClimate ? `${Math.round(lastClimate.temp_max)}°C` : '—'}
+                            </span>
+                            {lastClimate && (
+                                <span className="text-[11px] text-brand-dark/50">{lastClimate.humidity}%</span>
+                            )}
+                        </div>
+                    </div>
+                </header>
+
+                {/* Pantalla */}
+                <main className="flex-1">
+                    {children}
+                </main>
+            </div>
         </div>
     );
 };

@@ -30,6 +30,15 @@ export default {
         'brand-secondary': 'var(--color-brand-secondary)',
         'brand-accent': 'var(--color-brand-accent)',
         'brand-deep': '#ecf0f1',
+        // Rediseño 2026
+        'sidebar': 'var(--color-sidebar)',
+        'sidebar-active': 'var(--color-sidebar-active)',
+        'sidebar-text': 'var(--color-sidebar-text)',
+        'sidebar-hover': 'var(--color-sidebar-hover)',
+        'app-bg': 'var(--color-app-bg)',
+        'app-card': 'var(--color-app-card)',
+        'app-border': 'var(--color-app-border)',
+        'topbar': 'var(--color-topbar)',
       },
       backgroundImage: {
         'main-gradient': 'linear-gradient(to bottom right, var(--color-brand-bg), #ecf0f1)',
