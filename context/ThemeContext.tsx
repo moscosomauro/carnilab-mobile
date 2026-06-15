@@ -17,7 +17,7 @@ const THEME_STORAGE_KEY = 'carnilab_theme';
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [currentTheme, setCurrentTheme] = useState<Theme>('default');
-    const [currentLogo, setCurrentLogo] = useState<string>('/carnibot.png');
+    const [currentLogo, setCurrentLogo] = useState<string>('/sarracenia-logo.png');
     const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
         const saved = localStorage.getItem('carnilab_dark_mode');
         return saved === 'true';
@@ -46,7 +46,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         localStorage.setItem(THEME_STORAGE_KEY, theme);
 
         // Set Logo based on theme
-        let logoPath = '/brand-logo.png';
+        let logoPath = '/sarracenia-logo.png';
         if (theme === 'christmas') logoPath = '/assets/themes/christmas/logo.png';
         else if (theme === 'halloween') logoPath = '/assets/themes/halloween/logo.png';
         else if (theme === 'spring') logoPath = '/assets/themes/spring/logo.png';
