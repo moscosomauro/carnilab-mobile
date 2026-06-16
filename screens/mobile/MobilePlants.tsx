@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { MobileHeader } from '../../components/MobileLayout';
 import { SpeciesIcon } from '../../components/SpeciesIcon';
-import { Search, Plus, MapPin } from 'lucide-react';
+import { Search, Plus, MapPin, ChevronRight, ScanLine } from 'lucide-react';
 
 const estadoMeta: Record<string, { label: string; dot: string; text: string }> = {
   saludable: { label: 'Saludable', dot: 'bg-emerald-500', text: 'text-emerald-600' },
@@ -26,11 +26,12 @@ const MobilePlants: React.FC = () => {
 
   return (
     <>
-      <MobileHeader title="Plantas" subtitle={`${plants.length} en tu colección`} />
+      <MobileHeader title="Plantas" subtitle="Gestiona tu colección" />
       <div className="px-5 space-y-3">
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-dark/30" />
-          <input value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar planta…" className="w-full h-11 rounded-full bg-app-card border border-app-border pl-9 pr-4 text-[13.5px] focus:outline-none focus:ring-2 focus:ring-brand-primary/20" />
+          <input value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar planta…" className="w-full h-11 rounded-full bg-app-card border border-app-border pl-9 pr-10 text-[13.5px] focus:outline-none focus:ring-2 focus:ring-brand-primary/20" />
+          <ScanLine size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-dark/30" />
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-5 px-5">
           {FILTERS.map(([v, l]) => (
@@ -55,14 +56,15 @@ const MobilePlants: React.FC = () => {
                     {p.ubicacion && <span className="inline-flex items-center gap-1 text-[11px] text-brand-dark/45 truncate"><MapPin size={11} /> {p.ubicacion}</span>}
                   </div>
                 </div>
+                <ChevronRight size={18} className="text-brand-dark/25 shrink-0" />
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* FAB */}
-      <button onClick={() => navigate('/add')} className="fixed bottom-24 right-5 z-40 w-14 h-14 rounded-full bg-brand-primary text-white flex items-center justify-center shadow-lg shadow-brand-primary/30 active:scale-95 transition-all"><Plus size={26} /></button>
+      {/* FAB pill */}
+      <button onClick={() => navigate('/add')} className="fixed bottom-24 right-5 z-40 flex items-center gap-2 rounded-full bg-brand-primary text-white pl-4 pr-5 py-3 shadow-lg shadow-brand-primary/30 active:scale-95 transition-all"><Plus size={20} /> <span className="text-[14px] font-bold">Agregar planta</span></button>
     </>
   );
 };
