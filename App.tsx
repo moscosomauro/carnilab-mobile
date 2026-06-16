@@ -23,9 +23,23 @@ const SeedBankScreen = lazy(() => import('./screens/SeedBankScreen'));
 const LabScreen = lazy(() => import('./screens/Lab'));
 const SyncScreen = lazy(() => import('./screens/SyncScreen'));
 
+// Pantallas móviles (captura de campo)
+const MobileHome = lazy(() => import('./screens/mobile/MobileHome'));
+const MobilePlants = lazy(() => import('./screens/mobile/MobilePlants'));
+const MobileDiary = lazy(() => import('./screens/mobile/MobileDiary'));
+const MobileAddPlant = lazy(() => import('./screens/mobile/MobileAddPlant'));
+const MobileCrosses = lazy(() => import('./screens/mobile/MobileCrosses'));
+const MobileSeedBank = lazy(() => import('./screens/mobile/MobileSeedBank'));
+const MobileCarniBot = lazy(() => import('./screens/mobile/MobileCarniBot'));
+const MobileSync = lazy(() => import('./screens/mobile/MobileSync'));
+
 // Non-lazy components (always needed)
 import { NotificationToast } from './components/NotificationToast';
 import { DesktopLayout } from './components/DesktopLayout';
+import { MobileLayout } from './components/MobileLayout';
+import { useIsMobile } from './utils/useIsMobile';
+import { isPaired } from './db/syncClient';
+import { useState } from 'react';
 import { ThemeParticles } from './components/ThemeParticles';
 import { ThemeDecorations } from './components/ThemeDecorations';
 import { DynamicBackground } from './components/DynamicBackground';
@@ -127,6 +141,44 @@ const AppRoutes: React.FC = () => {
   );
 };
 
+// Rutas de la versión móvil (captura de campo)
+const MobileRoutes: React.FC = () => (
+  <Suspense fallback={<PageLoader />}>
+    <Routes>
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/dashboard" element={<MobileHome />} />
+      <Route path="/diary" element={<MobileDiary />} />
+      <Route path="/plants" element={<MobilePlants />} />
+      <Route path="/plant/:id" element={<PlantDetails />} />
+      <Route path="/add" element={<MobileAddPlant />} />
+      <Route path="/crosses" element={<MobileCrosses />} />
+      <Route path="/seed-bank" element={<MobileSeedBank />} />
+      <Route path="/ai" element={<MobileCarniBot />} />
+      <Route path="/alerts" element={<Alerts />} />
+      <Route path="/sync" element={<MobileSync />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+    </Routes>
+  </Suspense>
+);
+
+// App móvil: arranca obligando a emparejar por QR; ya emparejada, muestra
+// el armazón con barra inferior.
+const MobileApp: React.FC = () => {
+  const [paired, setPaired] = useState(isPaired());
+  if (!paired) {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <MobileSync onPaired={() => setPaired(true)} />
+      </Suspense>
+    );
+  }
+  return (
+    <MobileLayout>
+      <MobileRoutes />
+    </MobileLayout>
+  );
+};
+
 const App: React.FC = () => {
   return (
     <AuthProvider>
@@ -140,6 +192,7 @@ const App: React.FC = () => {
 };
 
 const AppContent: React.FC = () => {
+  const isMobile = useIsMobile();
   return (
     <HashRouter>
       <ScrollToTop />
@@ -156,9 +209,13 @@ const AppContent: React.FC = () => {
       <ThemeDecorations />
 
       <div className="min-h-screen w-full bg-transparent text-slate-100 font-sans selection:bg-teal-500/30 selection:text-white">
-        <DesktopLayout>
-          <AppRoutes />
-        </DesktopLayout>
+        {isMobile ? (
+          <MobileApp />
+        ) : (
+          <DesktopLayout>
+            <AppRoutes />
+          </DesktopLayout>
+        )}
       </div>
     </HashRouter>
   );
