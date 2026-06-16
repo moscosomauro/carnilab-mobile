@@ -48,7 +48,7 @@ export const SpeciesIcon = ({ species, size = 24, className = "" }: { species: s
 
     // Calcular el src directamente (no usar state para evitar re-renders)
     const iconName = getSpeciesIcon(species);
-    const imageSrc = `/assets/icons/species/${iconName}.png?v=2`; // Cache buster
+    const imageSrc = `./assets/icons/species/${iconName}.png?v=2`; // Cache buster
 
     useEffect(() => {
         // Reset cuando cambia la especie

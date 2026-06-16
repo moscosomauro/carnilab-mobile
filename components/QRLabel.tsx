@@ -288,7 +288,7 @@ export const QRLabel: React.FC<QRLabelProps> = ({ plant, onClose, canPrint }) =>
                     >
                         {/* Tu diseño artístico como fondo */}
                         <img
-                            src={`/assets/designs/${getDesignFilename(genus)}.png`}
+                            src={`./assets/designs/${getDesignFilename(genus)}.png`}
                             alt={genus}
                             style={{
                                 position: 'absolute',

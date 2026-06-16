@@ -9,10 +9,10 @@ export const DynamicBackground = () => {
     // Mapping of themes to background images
     const getBackgroundImage = () => {
         switch (currentTheme) {
-            case 'christmas': return '/assets/themes/christmas/background.png';
-            case 'halloween': return '/assets/themes/halloween/background.png';
-            case 'neon': return '/assets/themes/neon/background.png';
-            default: return '/assets/backgrounds/bg-paper-texture.jpg';
+            case 'christmas': return './assets/themes/christmas/background.png';
+            case 'halloween': return './assets/themes/halloween/background.png';
+            case 'neon': return './assets/themes/neon/background.png';
+            default: return './assets/backgrounds/bg-paper-texture.jpg';
         }
     };
 

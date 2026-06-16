@@ -19,6 +19,20 @@ export default defineConfig({
           onstart(options) {
             options.reload()
           },
+          // El preload se emite como ESM con extensión .mjs y se carga con
+          // sandbox:false en main.ts. Con "type":"module" el bundle queda en
+          // ESM (usa import); Electron solo acepta preload ESM si tiene .mjs y
+          // el sandbox está desactivado. Sin esto no se expone
+          // window.electronAPI y se rompe el QR de sincronización.
+          vite: {
+            build: {
+              rollupOptions: {
+                output: {
+                  entryFileNames: '[name].mjs',
+                },
+              },
+            },
+          },
         },
       ]),
       renderer(),

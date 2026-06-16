@@ -22,9 +22,10 @@ function createWindow() {
         height: Math.floor(height * 0.9),
         icon: path.join(process.env.VITE_PUBLIC || '', 'assets/icons/brand-logo.png'),
         webPreferences: {
-            preload: path.join(__dirname, 'preload.js'),
+            preload: path.join(__dirname, 'preload.mjs'),
             nodeIntegration: false,
             contextIsolation: true,
+            sandbox: false, // necesario para cargar el preload ESM (.mjs)
         },
         backgroundColor: '#F5F1EB',
         show: false, // Don't show until ready
