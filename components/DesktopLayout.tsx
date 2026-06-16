@@ -36,7 +36,7 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = ({ children }) => {
         { name: 'Clima', icon: 'icon-climate', path: '/climate' },
         { name: 'CarniBot', icon: 'icon-bot', path: '/ai' },
         { name: 'Backup', icon: 'icon-backup', path: '/backup' },
-        { name: 'Ajustes', icon: '', lucide: <Settings size={20} className="text-[#C9A24B]" />, path: '/profile' },
+        { name: 'Ajustes', icon: 'icon-ajuste', path: '/profile' },
     ];
 
     const isActive = (path: string) =>
@@ -60,32 +60,36 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = ({ children }) => {
                 </div>
             </div>
 
-            {/* Navegación */}
-            <nav className="flex-1 overflow-y-auto px-3 space-y-1">
-                {items.map(item => {
-                    const active = isActive(item.path);
-                    return (
-                        <button
-                            key={item.path}
-                            onClick={() => go(item.path)}
-                            className={`relative w-full flex items-center gap-3 pl-5 pr-3 py-2.5 rounded-lg text-[13.5px] font-semibold transition-all duration-200 ${active
-                                ? 'bg-sidebar-active text-white'
-                                : 'text-sidebar-text hover:bg-sidebar-hover hover:text-white'
-                                }`}
-                        >
-                            {active && <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-full bg-[#C9A24B]" />}
-                            {item.icon
-                                ? <AssetIcon name={item.icon} size={20} className={active ? '' : 'opacity-90'} />
-                                : item.lucide}
-                            <span className="flex-1 text-left">{item.name}</span>
-                            {item.path === '/alerts' && alertasPend > 0 && (
-                                <span className="text-[10px] font-black bg-brand-accent text-white rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">
-                                    {alertasPend}
-                                </span>
-                            )}
-                        </button>
-                    );
-                })}
+            {/* Navegación (láminas ilustradas) */}
+            <nav className="flex-1 overflow-y-auto px-3 pb-3">
+                <div className="grid grid-cols-2 gap-2.5">
+                    {items.map(item => {
+                        const active = isActive(item.path);
+                        return (
+                            <button
+                                key={item.path}
+                                onClick={() => go(item.path)}
+                                title={item.name}
+                                className={`relative rounded-xl transition-all duration-200 ${active
+                                    ? 'ring-2 ring-[#C9A24B] scale-[1.03] shadow-lg shadow-black/30'
+                                    : 'opacity-80 hover:opacity-100 hover:scale-[1.02]'
+                                    }`}
+                            >
+                                <img
+                                    src={`./assets/icons/${item.icon}.png`}
+                                    alt={item.name}
+                                    className="w-full aspect-square object-contain rounded-xl"
+                                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.opacity = '0.3'; }}
+                                />
+                                {item.path === '/alerts' && alertasPend > 0 && (
+                                    <span className="absolute top-1 right-1 text-[10px] font-black bg-brand-accent text-white rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow">
+                                        {alertasPend}
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
             </nav>
 
             {/* Usuario */}
@@ -110,7 +114,7 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = ({ children }) => {
     return (
         <div className="min-h-screen bg-app-bg text-brand-dark">
             {/* Sidebar fijo (desktop) */}
-            <aside className="hidden lg:flex flex-col fixed inset-y-0 left-0 w-60 bg-sidebar z-40">
+            <aside className="hidden lg:flex flex-col fixed inset-y-0 left-0 w-72 bg-sidebar z-40">
                 <SidebarContent />
             </aside>
 
@@ -128,7 +132,7 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = ({ children }) => {
             )}
 
             {/* Contenido */}
-            <div className="lg:ml-60 flex flex-col min-h-screen">
+            <div className="lg:ml-72 flex flex-col min-h-screen">
                 {/* Barra superior */}
                 <header className="sticky top-0 z-30 bg-topbar/90 backdrop-blur-md border-b border-app-border">
                     <div className="flex items-center gap-3 px-4 lg:px-8 h-16">
