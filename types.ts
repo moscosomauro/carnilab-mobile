@@ -14,6 +14,12 @@ export interface Plant {
   images?: PlantImage[]; // New for Vivero 2.0
   en_venta?: boolean;
   precio_venta?: number | null;
+  // Detalles de cultivo (rediseño 2026)
+  iluminacion?: string;
+  humedad?: string;
+  sustrato?: string;
+  tamano_maceta?: string;
+  etiquetas?: string[];
 }
 
 export interface PlantImage {
@@ -39,6 +45,7 @@ export interface Cross {
   padre_especie: string;
   // Lista de padres adicionales (donantes extra)
   padres_extra?: ExtraParent[];
+  objetivo?: string; // Objetivo de la cruza (rediseño 2026)
   fecha_cruza: string;
   fecha_germinacion: string | null;
   semillas_obtenidas: number;
@@ -202,6 +209,9 @@ export interface SeedBatch {
   inicio_estratificacion?: string | null;
   fin_estratificacion?: string | null;
   notas?: string;
+  // Rediseño 2026
+  germinacion?: number; // % de germinación actual
+  ubicacion?: string;   // p.ej. "Cámara fría 1 · Estante B"
   owner_key?: string;
   isSyncing?: boolean;
 }

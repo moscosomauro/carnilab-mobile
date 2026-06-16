@@ -75,6 +75,13 @@ export const PlantSchema = z.object({
     .max(1000000, 'El precio de venta no puede exceder 1,000,000')
     .optional()
     .nullable(),
+
+  // Detalles de cultivo (rediseño 2026)
+  iluminacion: z.string().max(100).trim().optional().or(z.literal('')),
+  humedad: z.string().max(100).trim().optional().or(z.literal('')),
+  sustrato: z.string().max(100).trim().optional().or(z.literal('')),
+  tamano_maceta: z.string().max(50).trim().optional().or(z.literal('')),
+  etiquetas: z.array(z.string().max(40).trim()).max(20).optional(),
 });
 
 export type PlantInput = z.infer<typeof PlantSchema>;
@@ -160,6 +167,8 @@ export const CrossSchema = z.object({
       message: 'Estado inválido',
     })
     .default('en_proceso'),
+
+  objetivo: z.string().max(100).trim().optional().or(z.literal('')),
 
   notas: z
     .string()

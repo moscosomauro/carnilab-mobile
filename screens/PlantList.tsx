@@ -1,418 +1,434 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { hasAccess } from '../utils/planHelpers';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { Plant } from '../types';
-import { TechnicalSheet } from '../components/TechnicalSheet';
+import { AssetIcon } from '../components/AssetIcon';
 import { QRLabel } from '../components/QRLabel';
 import { SpeciesIcon } from '../components/SpeciesIcon';
+import { QRCodeSVG } from 'qrcode.react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import {
+  Search, Filter, ChevronDown, Download, Plus, Star, Ruler, Leaf,
+  NotebookPen, CalendarDays, QrCode, Printer, ChevronLeft, ChevronRight,
+  Droplets, FlaskConical, Scissors, Eye, ImagePlus, ExternalLink, Check
+} from 'lucide-react';
 
-// Asset Icon Helper (Consistent with Dashboard)
-const AssetIcon = ({ name, size = 20, className = "" }: { name: string, size?: number, className?: string }) => (
-  <img
-    src={`/assets/icons/${name}.png`}
-    alt={name}
-    style={{ width: size, height: size }}
-    className={`object-contain ${className}`}
-    onError={(e) => { e.currentTarget.style.opacity = '0.3'; }}
-  />
-);
+const estadoMeta: Record<string, { label: string; dot: string; text: string }> = {
+  saludable: { label: 'Saludable', dot: 'bg-emerald-500', text: 'text-emerald-600' },
+  regular: { label: 'Regular', dot: 'bg-amber-500', text: 'text-amber-600' },
+  critico: { label: 'Crítico', dot: 'bg-rose-500', text: 'text-rose-600' },
+};
 
-// --- CUSTOM SVG ICONS (Organic Minimalist) ---
+const diaryIcon: Record<string, React.ReactNode> = {
+  riego: <Droplets size={13} />,
+  fertilizacion: <FlaskConical size={13} />,
+  poda: <Scissors size={13} />,
+  observacion: <Eye size={13} />,
+};
+const diaryLabel: Record<string, string> = {
+  riego: 'Riego', fertilizacion: 'Fertilización', poda: 'Poda', observacion: 'Observación',
+};
 
-const IconBack = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4A5D4F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M19 12H5M12 19l-7-7 7-7" />
-  </svg>
-);
-
-const IconSearch = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8E877F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8" />
-    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-  </svg>
-);
-
-const IconCalendar = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-    <line x1="16" y1="2" x2="16" y2="6" />
-    <line x1="8" y1="2" x2="8" y2="6" />
-    <line x1="3" y1="10" x2="21" y2="10" />
-  </svg>
-);
-
-const IconLocation = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-    <circle cx="12" cy="10" r="3" />
-  </svg>
-);
-
-const IconQR = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
-    <rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
-  </svg>
-);
-
-
+const fmtDate = (d?: string) =>
+  d ? new Date(d).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
 
 const PlantList: React.FC = () => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
-  const { plants, deletePlant, diary } = useApp();
+  const { plants, diary } = useApp();
   const { user } = useAuth();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEstado, setFilterEstado] = useState('todos');
-  const [selectedPlant, setSelectedPlant] = useState<Plant | null>(null);
-  const [qrPlant, setQrPlant] = useState<Plant | null>(null);
-  const [showQROptions, setShowQROptions] = useState<Plant | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [showExport, setShowExport] = useState(false);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [qrLabelPlant, setQrLabelPlant] = useState<Plant | null>(null);
-
-  const canExport = hasAccess(user?.plan, 'elite');
-  const canGenQR = hasAccess(user?.plan, 'elite');
-
-
-
-  const cardColors: Record<string, string> = {
-    saludable: 'bg-[#DCEDC8] dark:bg-[#1A2E1F] border-[#C5E1A5] dark:border-[#2D4A33]', // Distinctive Lime / Dark Green
-    regular: 'bg-[#FFF9C4] dark:bg-[#33301B] border-[#FFF59D] dark:border-[#4A4725]',   // Distinctive Yellow / Dark Yellow
-    critico: 'bg-[#FFCDD2] dark:bg-[#331B1B] border-[#EF9A9A] dark:border-[#4A2525]',   // Distinctive Red / Dark Red
-  };
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
 
   const plantasFiltradas = useMemo(() => {
     return plants.filter(p => {
-      const matchesSearch = p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.especie.toLowerCase().includes(searchTerm.toLowerCase());
-
+      const q = searchTerm.toLowerCase();
+      const matchesSearch = p.nombre.toLowerCase().includes(q) || p.especie.toLowerCase().includes(q);
       let matchesEstado = true;
-      if (filterEstado === 'todos') matchesEstado = true;
-      else if (filterEstado === 'venta') matchesEstado = !!p.en_venta;
-      else matchesEstado = p.estado === filterEstado;
-
+      if (filterEstado === 'venta') matchesEstado = !!p.en_venta;
+      else if (filterEstado !== 'todos') matchesEstado = p.estado === filterEstado;
       return matchesSearch && matchesEstado;
     });
   }, [plants, searchTerm, filterEstado]);
 
-  const qrPlantDiary = useMemo(() => {
-    if (!qrPlant) return [];
-    return diary.filter(e => e.planta_nombre === qrPlant.nombre);
-  }, [diary, qrPlant]);
+  const totalPages = Math.max(1, Math.ceil(plantasFiltradas.length / perPage));
+  useEffect(() => { if (page > totalPages) setPage(1); }, [totalPages, page]);
+  const pageStart = (page - 1) * perPage;
+  const pageItems = plantasFiltradas.slice(pageStart, pageStart + perPage);
 
-  const handleDelete = (id: number) => {
-    if (window.confirm(t('plantList.detail.confirmDelete'))) {
-      deletePlant(id);
-      setSelectedPlant(null);
+  // Selección por defecto: primera planta visible
+  useEffect(() => {
+    if ((selectedId === null || !plants.some(p => p.id === selectedId)) && plants.length > 0) {
+      setSelectedId(plants[0].id);
     }
-  };
+  }, [plants, selectedId]);
+
+  const selected = useMemo(() => plants.find(p => p.id === selectedId) || null, [plants, selectedId]);
+  const selectedDiary = useMemo(() =>
+    selected ? diary.filter(e => e.planta_nombre === selected.nombre)
+      .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()) : [],
+    [diary, selected]);
+
+  const lastConAltura = selectedDiary.find(e => e.altura != null);
+  const lastConHojas = selectedDiary.find(e => e.hojas != null);
+  const diasDesde = selected?.fecha_adquisicion
+    ? Math.max(0, Math.floor((Date.now() - new Date(selected.fecha_adquisicion).getTime()) / 86400000))
+    : null;
+
+  const selectedImages = useMemo(() => {
+    if (!selected) return [];
+    if (selected.images?.length) return selected.images.map(i => i.image_url);
+    return selected.imagen ? [selected.imagen] : [];
+  }, [selected]);
 
   const exportPDF = () => {
     const doc = new jsPDF();
     doc.text('CarniLab - Mi Colección', 14, 15);
-    const data = plantasFiltradas.map(p => [p.nombre, p.especie, p.estado, p.ubicacion || '', p.en_venta ? 'Sí' : 'No']);
     autoTable(doc, {
-      head: [['Nombre', 'Especie', 'Estado', 'Ubicación', 'Venta']],
-      body: data,
+      head: [['Nombre', 'Especie', 'Estado', 'Ubicación', 'Precio']],
+      body: plantasFiltradas.map(p => [p.nombre, p.especie, estadoMeta[p.estado]?.label || p.estado, p.ubicacion || '', p.precio ? `$${p.precio}` : '']),
       startY: 20,
     });
     doc.save('carnilab-coleccion.pdf');
+    setShowExport(false);
   };
-
   const exportCSV = () => {
-    const headers = ['Nombre', 'Especie', 'Estado', 'Ubicación', 'En Venta', 'Precio'];
-    const rows = plantasFiltradas.map(p => [
-      p.nombre, p.especie, p.estado, p.ubicacion, p.en_venta ? 'Sí' : 'No', p.precio_venta || 0
-    ]);
-    const csvContent = "data:text/csv;charset=utf-8," +
-      [headers, ...rows].map(e => e.join(",")).join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "carnilab-coleccion.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const headers = ['Nombre', 'Especie', 'Estado', 'Ubicación', 'Precio'];
+    const rows = plantasFiltradas.map(p => [p.nombre, p.especie, p.estado, p.ubicacion || '', p.precio || 0]);
+    const csv = 'data:text/csv;charset=utf-8,' + [headers, ...rows].map(r => r.join(',')).join('\n');
+    const link = document.createElement('a');
+    link.href = encodeURI(csv);
+    link.download = 'carnilab-coleccion.csv';
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    setShowExport(false);
   };
 
-  const handleEdit = (plant: Plant) => {
-    navigate('/add', { state: plant });
-  };
+  const filterOptions = [
+    { id: 'todos', label: 'Todas' },
+    { id: 'saludable', label: 'Saludables' },
+    { id: 'regular', label: 'Regulares' },
+    { id: 'critico', label: 'Críticas' },
+    { id: 'venta', label: 'En venta' },
+  ];
 
   return (
-    <div className="min-h-screen bg-[#F5F1EB] flex justify-center selection:bg-[#6B8E23]/10 font-display lg:bg-transparent">
-      {/* Paper texture */}
-      <div
-        className="fixed inset-0 opacity-20 pointer-events-none"
-        style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/cream-paper.png")' }}
-      />
-
-      <div className="relative z-10 w-full max-w-[390px] lg:max-w-6xl px-6 pt-10 pb-32 lg:pb-10 flex flex-col items-center">
-        {/* Header */}
-        <div className="w-full flex items-center justify-between mb-2">
-          <button onClick={() => navigate(-1)} className="p-2 -ml-2 active:scale-90 transition-transform">
-            <IconBack />
-          </button>
-          <div className="text-center absolute left-1/2 -translate-x-1/2">
-            <h1 className="text-[22px] font-bold text-[#2E2E2E] dark:text-white leading-tight tracking-tight">{t('plantList.title')}</h1>
-            <p className="text-[11px] text-[#8E877F] dark:text-slate-400 font-semibold tracking-wider opacity-80 uppercase italic">{t('plantList.collectionCount', { count: plantasFiltradas.length })}</p>
-          </div>
-          <div className="flex gap-2 items-center">
-            {/* Desktop Add Button */}
-            <button
-              onClick={() => navigate('/add')}
-              className="hidden lg:flex h-10 bg-[#FF7A59] text-white px-6 rounded-full items-center gap-2 font-black text-xs hover:bg-[#FF7A59]/90 transition-colors shadow-sm"
-            >
-              <span>+</span> {t('plantList.addPlant')}
-            </button>
-            {canExport && (
-              <div className="flex gap-1">
-                <button onClick={exportPDF} title="PDF" className="w-10 h-10 bg-white rounded-full shadow-sm border border-gray-100 flex items-center justify-center active:scale-90 transition-transform hover:bg-[#F2FBFF]">
-                  <AssetIcon name="icon-pdf" size={24} />
-                </button>
-                <button onClick={exportCSV} title="CSV" className="w-10 h-10 bg-white rounded-full shadow-sm border border-gray-100 flex items-center justify-center active:scale-90 transition-transform hover:bg-[#F2FBFF]">
-                  <AssetIcon name="icon-plants" size={20} className="opacity-60" />
-                </button>
-              </div>
-            )}
-          </div>
+    <div className="px-4 lg:px-8 py-6 max-w-[1500px] mx-auto">
+      {/* Encabezado */}
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-12 h-12 rounded-xl bg-[#C9A24B]/12 flex items-center justify-center">
+          <AssetIcon name="icon-plants" size={26} />
         </div>
+        <div>
+          <h1 className="font-accent text-[32px] font-bold text-brand-dark leading-none">Gestión de plantas</h1>
+          <p className="text-[12.5px] text-brand-dark/50 mt-1">Administra tu colección de plantas carnívoras</p>
+        </div>
+      </div>
 
-        {/* Search Bar */}
-        <div className="w-full mt-6 relative mb-6">
-          <div className="absolute left-5 top-1/2 -translate-y-1/2">
-            <IconSearch />
-          </div>
+      {/* Barra de herramientas */}
+      <div className="flex flex-wrap items-center gap-3 mb-5">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-dark/30" />
           <input
-            type="text"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder={t('plantList.searchPlaceholder')}
-            className="w-full h-12 rounded-full bg-[#EFEBE4] dark:bg-slate-800 border border-white dark:border-slate-700 px-12 text-[14px] font-bold text-[#2E2E2E] dark:text-white shadow-sm outline-none placeholder-[#8E877F]/60 dark:placeholder-slate-400"
+            onChange={e => { setSearchTerm(e.target.value); setPage(1); }}
+            placeholder="Buscar plantas..."
+            className="w-full bg-app-card border border-app-border rounded-full pl-9 pr-4 py-2 text-[13px] text-brand-dark placeholder:text-brand-dark/30 focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
           />
         </div>
 
-        {/* Filters */}
-        <div className="w-[100vw] max-w-[390px] px-6 -mx-6 mb-6 overflow-x-auto no-scrollbar flex gap-2">
-          {['todos', 'venta', 'saludable', 'regular', 'critico'].map(estado => (
-            <button
-              key={estado}
-              onClick={() => setFilterEstado(estado)}
-              className={`px-5 py-2.5 rounded-full text-[12px] font-black transition-all whitespace-nowrap shadow-sm border ${filterEstado === estado
-                ? 'bg-[#A5A98F] dark:bg-[#6B8E23] text-white border-[#8D9178] dark:border-[#557218] scale-95'
-                : 'bg-white/60 dark:bg-slate-800/60 text-[#4A5D4F] dark:text-slate-300 border-white/80 dark:border-slate-700/80'
-                }`}
-            >
-              {estado === 'todos' ? t('plantList.filters.all') :
-                estado === 'venta' ? t('plantList.filters.forSale') :
-                  estado === 'saludable' ? t('plantList.filters.healthy') :
-                    estado === 'regular' ? t('plantList.filters.regular') :
-                      estado === 'critico' ? t('plantList.filters.critical') :
-                        estado.charAt(0).toUpperCase() + estado.slice(1)}
-            </button>
-          ))}
-        </div>
-
-        {/* Plant List */}
-        <div className="w-full space-y-4 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
-          {plantasFiltradas.map(planta => (
-            <div
-              key={planta.id}
-              onClick={() => setSelectedPlant(planta)}
-              className={`rounded-[28px] p-2 pr-4 shadow-[0_2px_12px_rgba(0,0,0,0.02)] border flex items-center gap-4 active:scale-[0.98] transition-all cursor-pointer ${cardColors[planta.estado] || cardColors.saludable}`}
-            >
-              {/* Image with QR overlay */}
-              <div className="w-[100px] h-[100px] bg-white/40 rounded-[22px] overflow-hidden relative flex-shrink-0">
-                <img
-                  src={planta.imagen || 'https://images.unsplash.com/photo-1596238681789-29437f8623b3?w=400'}
-                  alt={planta.nombre}
-                  loading="lazy"
-                  className="w-full h-full object-cover"
-                />
-                <button
-                  onClick={(e) => { e.stopPropagation(); setShowQROptions(planta); }}
-                  className="absolute top-2 right-2 w-7 h-7 bg-white/90 backdrop-blur-sm rounded-lg flex items-center justify-center text-[#2E2E2E] shadow-sm active:scale-90 transition-transform"
-                >
-                  <IconQR />
+        {/* Filtros */}
+        <div className="relative">
+          <button onClick={() => setShowFilters(v => !v)}
+            className="flex items-center gap-2 bg-app-card border border-app-border rounded-full px-4 py-2 text-[13px] font-semibold text-brand-dark hover:bg-app-bg transition-colors">
+            <Filter size={14} className="text-[#C9A24B]" /> Filtros <ChevronDown size={13} className="text-brand-dark/40" />
+          </button>
+          {showFilters && (
+            <div className="absolute z-30 mt-2 w-48 bg-app-card border border-app-border rounded-xl shadow-lg p-1.5">
+              {filterOptions.map(o => (
+                <button key={o.id}
+                  onClick={() => { setFilterEstado(o.id); setShowFilters(false); setPage(1); }}
+                  className={`w-full flex items-center justify-between text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${filterEstado === o.id ? 'bg-brand-primary/10 text-brand-primary' : 'text-brand-dark/70 hover:bg-app-bg'}`}>
+                  {o.label} {filterEstado === o.id && <Check size={14} />}
                 </button>
-              </div>
-
-              {/* Info Area */}
-              <div className="flex-1 py-1 flex flex-col justify-between min-h-[90px] min-w-0">
-                <div>
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-black text-[#2E2E2E] dark:text-white text-[16px] leading-tight truncate pr-2">{planta.nombre}</h3>
-                    <SpeciesIcon species={planta.especie} size={24} className="opacity-80" />
-                  </div>
-                  <p className="text-[12px] font-bold text-[#8E877F] dark:text-slate-400 italic truncate opacity-80">{planta.especie}</p>
-                </div>
-
-                <div className="space-y-1 pb-1">
-                  <div className="flex items-center gap-1.5 text-[#8E877F]">
-                    <IconCalendar />
-                    <span className="text-[10px] font-bold">{planta.fecha_adquisicion ? new Date(planta.fecha_adquisicion).toLocaleDateString() : 'No especificado'}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[#8E877F]">
-                    <IconLocation />
-                    <span className="text-[10px] font-bold truncate max-w-[120px]">{planta.ubicacion || 'Sin ubicación'}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Price Tag only if for sale (Status badge removed) */}
-              {planta.en_venta && (
-                <div className="absolute top-2 right-2">
-                  <div className="text-[10px] font-black text-[#FF7A59] bg-white/80 backdrop-blur-sm border border-[#FF7A59]/20 px-2 py-1 rounded-full shadow-sm">
-                    $ {planta.precio_venta}
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-
-          {plantasFiltradas.length === 0 && (
-            <div className="py-20 text-center opacity-40 flex flex-col items-center">
-              <div className="text-[40px] mb-2">🌿</div>
-              <p className="text-sm font-bold text-[#4A5D4F]">{t('plantList.noPlants')}</p>
+              ))}
             </div>
           )}
         </div>
 
-        {/* Detail Modal (Simplified Overlay for Premium Look) */}
-        {selectedPlant && (
-          <div className="fixed inset-0 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md z-[100] p-6 flex items-center justify-center animate-in fade-in zoom-in duration-300">
-            <div className="w-full max-w-[342px] bg-[#F5F1EB] dark:bg-slate-800 rounded-[40px] overflow-hidden shadow-2xl border border-white dark:border-slate-700">
-              <div className="relative h-64">
-                <img src={selectedPlant.imagen || ''} className="w-full h-full object-cover" alt="Detail" />
-                <button onClick={() => setSelectedPlant(null)} className="absolute top-4 right-4 w-10 h-10 bg-black/20 backdrop-blur-lg rounded-full flex items-center justify-center text-white">
-                  ✕
-                </button>
-              </div>
-              <div className="p-8">
-                <h2 className="text-2xl font-black text-[#2E2E2E] dark:text-white mb-1">{selectedPlant.nombre}</h2>
-                <p className="text-lg italic text-[#8E877F] dark:text-slate-400 font-bold mb-6">{selectedPlant.especie}</p>
+        <div className="flex-1" />
 
-                <div className="grid grid-cols-2 gap-4 mb-8">
-                  <button onClick={() => handleEdit(selectedPlant)} className="h-12 bg-white text-[#2E2E2E] font-black rounded-2xl shadow-sm active:scale-95 transition-all">{t('plantList.detail.edit')}</button>
-                  <button onClick={() => handleDelete(selectedPlant.id)} className="h-12 bg-[#FF7A59]/10 text-[#FF7A59] font-black rounded-2xl active:scale-95 transition-all">{t('plantList.detail.delete')}</button>
-                </div>
-                <button onClick={() => setSelectedPlant(null)} className="w-full h-14 bg-[#4A5D4F] text-white font-black rounded-full shadow-lg active:scale-95 transition-all">{t('plantList.detail.close')}</button>
-              </div>
+        {/* Exportar */}
+        <div className="relative">
+          <button onClick={() => setShowExport(v => !v)}
+            className="flex items-center gap-2 bg-app-card border border-app-border rounded-full px-4 py-2 text-[13px] font-semibold text-brand-dark hover:bg-app-bg transition-colors">
+            <Download size={14} className="text-brand-dark/50" /> Exportar
+          </button>
+          {showExport && (
+            <div className="absolute right-0 z-30 mt-2 w-40 bg-app-card border border-app-border rounded-xl shadow-lg p-1.5">
+              <button onClick={exportPDF} className="w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium text-brand-dark/70 hover:bg-app-bg">Exportar PDF</button>
+              <button onClick={exportCSV} className="w-full text-left px-3 py-2 rounded-lg text-[13px] font-medium text-brand-dark/70 hover:bg-app-bg">Exportar CSV</button>
             </div>
-          </div>
-        )}
-
-        {/* QR Options Selector */}
-        {showQROptions && (
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6"
-            onClick={() => setShowQROptions(null)}
-          >
-            <div
-              className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 animate-in zoom-in duration-200"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-xl font-black text-[#2E2E2E] dark:text-white mb-2">
-                {t('plantList.qrOptions.title')}
-              </h3>
-              <p className="text-sm font-bold text-[#8E877F] dark:text-slate-400 mb-6">
-                {showQROptions.nombre}
-              </p>
-
-              <div className="space-y-3">
-                <button
-                  onClick={() => {
-                    setQrLabelPlant(showQROptions);
-                    setShowQROptions(null);
-                  }}
-                  className="w-full h-16 bg-gradient-to-r from-[#4A5D4F] to-[#6B8E23] text-white rounded-2xl font-black flex items-center justify-between px-6 active:scale-95 transition-all shadow-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">🏷️</span>
-                    <div className="text-left">
-                      <div className="text-sm">{t('plantList.qrOptions.labelQR')}</div>
-                      <div className="text-[10px] font-medium opacity-80">{t('plantList.qrOptions.labelDesc')}</div>
-                    </div>
-                  </div>
-                  <span className="text-xl">→</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setQrPlant(showQROptions);
-                    setShowQROptions(null);
-                  }}
-                  className="w-full h-16 bg-white dark:bg-slate-700 border-2 border-[#4A5D4F] dark:border-slate-600 text-[#4A5D4F] dark:text-white rounded-2xl font-black flex items-center justify-between px-6 active:scale-95 transition-all"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">📄</span>
-                    <div className="text-left">
-                      <div className="text-sm">{t('plantList.qrOptions.sheet')}</div>
-                      <div className="text-[10px] font-medium opacity-60">{t('plantList.qrOptions.sheetDesc')}</div>
-                    </div>
-                  </div>
-                  <span className="text-xl">→</span>
-                </button>
-              </div>
-
-              <button
-                onClick={() => setShowQROptions(null)}
-                className="w-full mt-4 h-12 bg-gray-100 text-gray-700 rounded-2xl font-bold active:scale-95 transition-all"
-              >
-                {t('plantList.qrOptions.cancel')}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* QR Label Modal */}
-        {qrLabelPlant && (
-          <QRLabel
-            plant={qrLabelPlant}
-            onClose={() => setQrLabelPlant(null)}
-            canPrint={canGenQR}
-          />
-        )}
-
-        {/* Technical Sheet Modal */}
-        {qrPlant && (
-          <TechnicalSheet
-            plant={qrPlant}
-            diaryEntries={qrPlantDiary}
-            onClose={() => setQrPlant(null)}
-            canPrint={canGenQR}
-          />
-        )}
-
-        {/* Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 h-24 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-[#F5F1EB] dark:border-slate-800/80 flex justify-around items-center px-10 z-50 lg:hidden">
-          <button onClick={() => navigate('/dashboard')} className="flex flex-col items-center gap-1.5 text-[#8E877F] active:scale-95 transition-all">
-            <AssetIcon name="icon-home" size={24} className="opacity-40" />
-            <span className="text-[9px] font-bold uppercase tracking-widest text-[#8E877F]">Home</span>
-          </button>
-          <button onClick={() => navigate('/diary')} className="flex flex-col items-center gap-1.5 text-[#8E877F] active:scale-95 transition-all">
-            <AssetIcon name="icon-diary" size={24} className="opacity-40" />
-            <span className="text-[9px] font-bold uppercase tracking-widest text-[#8E877F]">Diario</span>
-          </button>
-          <button onClick={() => navigate('/plants')} className="flex flex-col items-center gap-1.5 text-[#4A5D4F] active:scale-95 transition-all relative">
-            <div className="absolute -top-12 w-1.5 h-1.5 rounded-full bg-[#4A5D4F]" />
-            <AssetIcon name="icon-plants" size={24} />
-            <span className="text-[9px] font-bold uppercase tracking-widest">Plantas</span>
-          </button>
-          <button onClick={() => navigate('/profile')} className="flex flex-col items-center gap-1.5 text-[#8E877F] active:scale-95 transition-all">
-            <AssetIcon name="icon-profile" size={24} className="opacity-40" />
-            <span className="text-[9px] font-bold uppercase tracking-widest text-[#8E877F]">Perfil</span>
-          </button>
+          )}
         </div>
 
+        {/* Nueva planta */}
+        <button onClick={() => navigate('/add')}
+          className="flex items-center gap-2 bg-brand-primary text-white rounded-full px-5 py-2 text-[13px] font-bold shadow-md shadow-brand-primary/20 hover:brightness-110 transition-all active:scale-95">
+          <Plus size={16} /> Nueva planta
+        </button>
       </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
+        {/* ===== Tabla ===== */}
+        <div className="xl:col-span-8">
+          <div className="bg-app-card border border-app-border rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden">
+            <p className="px-5 pt-4 pb-2 text-[12px] font-bold text-brand-dark/45">
+              Total: {plantasFiltradas.length} plantas
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="text-[10px] uppercase tracking-wider text-brand-dark/40 border-y border-app-border">
+                    <th className="font-bold px-5 py-2.5">Planta</th>
+                    <th className="font-bold px-3 py-2.5 hidden md:table-cell">Especie</th>
+                    <th className="font-bold px-3 py-2.5 hidden lg:table-cell">Adquisición</th>
+                    <th className="font-bold px-3 py-2.5 hidden xl:table-cell">Origen</th>
+                    <th className="font-bold px-3 py-2.5 hidden sm:table-cell">Precio</th>
+                    <th className="font-bold px-3 py-2.5">Estado</th>
+                    <th className="font-bold px-3 py-2.5 hidden lg:table-cell">Ubicación</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-app-border">
+                  {pageItems.map(p => {
+                    const m = estadoMeta[p.estado] || estadoMeta.saludable;
+                    const active = p.id === selectedId;
+                    return (
+                      <tr key={p.id} onClick={() => setSelectedId(p.id)}
+                        className={`cursor-pointer transition-colors ${active ? 'bg-brand-primary/[0.06]' : 'hover:bg-app-bg/60'}`}>
+                        <td className="px-5 py-2.5">
+                          <div className="flex items-center gap-2.5">
+                            {active && <span className="absolute left-0 w-1 h-7 rounded-r bg-[#C9A24B] -ml-5" />}
+                            <div className="w-9 h-9 rounded-full overflow-hidden bg-app-bg border border-app-border shrink-0 flex items-center justify-center">
+                              {p.imagen ? <img src={p.imagen} alt="" className="w-full h-full object-cover" />
+                                : <span className="text-[11px] font-black text-brand-dark/30">{p.nombre.charAt(0)}</span>}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="flex items-center gap-1 text-[13px] font-bold text-brand-dark truncate">
+                                {p.nombre} <Star size={12} className="text-[#C9A24B]/40 shrink-0" />
+                              </p>
+                              <p className="text-[11px] italic text-brand-dark/45 truncate md:hidden">{p.especie}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-2.5 hidden md:table-cell"><span className="text-[12px] italic text-brand-dark/55">{p.especie}</span></td>
+                        <td className="px-3 py-2.5 hidden lg:table-cell"><span className="text-[12px] text-brand-dark/55">{fmtDate(p.fecha_adquisicion)}</span></td>
+                        <td className="px-3 py-2.5 hidden xl:table-cell"><span className="text-[12px] text-brand-dark/55 truncate">{p.origen || '—'}</span></td>
+                        <td className="px-3 py-2.5 hidden sm:table-cell"><span className="text-[12px] font-semibold text-brand-dark/70">{p.precio ? `$${p.precio.toFixed(2)}` : '—'}</span></td>
+                        <td className="px-3 py-2.5">
+                          <span className={`inline-flex items-center gap-1.5 text-[12px] font-semibold ${m.text}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${m.dot}`} /> {m.label}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5 hidden lg:table-cell"><span className="text-[12px] text-brand-dark/55 truncate">{p.ubicacion || '—'}</span></td>
+                      </tr>
+                    );
+                  })}
+                  {pageItems.length === 0 && (
+                    <tr><td colSpan={7} className="px-5 py-14 text-center text-[13px] text-brand-dark/35">No hay plantas que coincidan 🌿</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Paginación */}
+            <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-t border-app-border">
+              <div className="flex items-center gap-1">
+                <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}
+                  className="w-7 h-7 rounded-lg border border-app-border flex items-center justify-center text-brand-dark/50 disabled:opacity-30 hover:bg-app-bg">
+                  <ChevronLeft size={14} />
+                </button>
+                {Array.from({ length: totalPages }).slice(0, 5).map((_, i) => (
+                  <button key={i} onClick={() => setPage(i + 1)}
+                    className={`w-7 h-7 rounded-lg text-[12px] font-bold flex items-center justify-center transition-colors ${page === i + 1 ? 'bg-brand-primary text-white' : 'text-brand-dark/55 hover:bg-app-bg'}`}>
+                    {i + 1}
+                  </button>
+                ))}
+                <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}
+                  className="w-7 h-7 rounded-lg border border-app-border flex items-center justify-center text-brand-dark/50 disabled:opacity-30 hover:bg-app-bg">
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+              <div className="flex items-center gap-3">
+                <select value={perPage} onChange={e => { setPerPage(Number(e.target.value)); setPage(1); }}
+                  className="bg-app-card border border-app-border rounded-lg px-2 py-1 text-[12px] text-brand-dark/60 focus:outline-none">
+                  <option value={10}>10 por página</option>
+                  <option value={25}>25 por página</option>
+                  <option value={50}>50 por página</option>
+                </select>
+                <span className="text-[12px] text-brand-dark/45">
+                  {plantasFiltradas.length === 0 ? '0' : `${pageStart + 1}-${Math.min(pageStart + perPage, plantasFiltradas.length)}`} de {plantasFiltradas.length}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Galería de la planta seleccionada */}
+          {selected && (
+            <div className="bg-app-card border border-app-border rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] mt-5 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="flex items-center gap-2 text-[12px] font-black uppercase tracking-wider text-brand-primary">
+                  <AssetIcon name="icon-plants" size={14} /> Galería de {selected.nombre}
+                </h3>
+              </div>
+              <div className="flex gap-2.5 overflow-x-auto pb-1">
+                {selectedImages.map((src, i) => (
+                  <div key={i} className="w-[84px] h-[84px] rounded-xl overflow-hidden border border-app-border shrink-0">
+                    <img src={src} alt="" className="w-full h-full object-cover" />
+                  </div>
+                ))}
+                <button onClick={() => navigate('/add', { state: selected })}
+                  className="w-[84px] h-[84px] rounded-xl border border-dashed border-app-border shrink-0 flex flex-col items-center justify-center gap-1 text-brand-dark/40 hover:bg-app-bg transition-colors">
+                  <ImagePlus size={18} /> <span className="text-[10px] font-semibold">Añadir foto</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ===== Panel de detalle ===== */}
+        <div className="xl:col-span-4">
+          {selected ? (
+            <div className="bg-app-card border border-app-border rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] p-5 xl:sticky xl:top-20">
+              <div className="flex gap-4">
+                <div className="w-[110px] h-[140px] rounded-2xl overflow-hidden bg-app-bg border border-app-border shrink-0">
+                  {selected.imagen ? <img src={selected.imagen} alt="" className="w-full h-full object-cover" />
+                    : <div className="w-full h-full flex items-center justify-center"><SpeciesIcon species={selected.especie} size={40} /></div>}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h2 className="flex items-center gap-1.5 font-accent text-[24px] font-bold text-brand-dark leading-tight">
+                    {selected.nombre} <Star size={16} className="text-[#C9A24B]/50 shrink-0" />
+                  </h2>
+                  <p className="text-[13px] italic text-brand-dark/50 mb-3">{selected.especie}</p>
+                  <button onClick={() => navigate(`/plant/${selected.id}`)}
+                    className="flex items-center gap-1.5 text-[12px] font-bold text-brand-primary hover:underline">
+                    Ver ficha completa <ExternalLink size={12} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Info general */}
+              <div className="mt-5 space-y-2.5">
+                {[
+                  ['Adquisición', fmtDate(selected.fecha_adquisicion)],
+                  ['Origen', selected.origen || '—'],
+                  ['Precio', selected.precio ? `$${selected.precio.toFixed(2)} USD` : '—'],
+                ].map(([k, v]) => (
+                  <div key={k} className="flex items-center justify-between text-[13px]">
+                    <span className="text-brand-dark/45">{k}</span>
+                    <span className="font-semibold text-brand-dark">{v}</span>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between text-[13px]">
+                  <span className="text-brand-dark/45">Estado de salud</span>
+                  <span className={`inline-flex items-center gap-1.5 font-semibold ${estadoMeta[selected.estado].text}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${estadoMeta[selected.estado].dot}`} /> {estadoMeta[selected.estado].label}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[13px]">
+                  <span className="text-brand-dark/45">Ubicación actual</span>
+                  <span className="font-semibold text-brand-dark">{selected.ubicacion || '—'}</span>
+                </div>
+              </div>
+
+              {selected.notas && (
+                <div className="mt-4 pt-4 border-t border-app-border">
+                  <p className="text-[11px] font-black uppercase tracking-wider text-brand-dark/40 mb-1">Notas</p>
+                  <p className="text-[12.5px] text-brand-dark/65 italic leading-relaxed">{selected.notas}</p>
+                </div>
+              )}
+
+              {/* Estadísticas rápidas */}
+              <div className="mt-4 pt-4 border-t border-app-border">
+                <p className="flex items-center gap-2 text-[12px] font-black uppercase tracking-wider text-brand-primary mb-3">
+                  <span className="text-[#C9A24B]"><Ruler size={14} /></span> Estadísticas rápidas
+                </p>
+                <div className="grid grid-cols-4 gap-2">
+                  <Stat icon={<Ruler size={15} />} value={lastConAltura?.altura != null ? `${lastConAltura.altura}` : '—'} unit="cm" label="Altura" />
+                  <Stat icon={<Leaf size={15} />} value={lastConHojas?.hojas != null ? `${lastConHojas.hojas}` : '—'} unit="" label="Hojas" />
+                  <Stat icon={<NotebookPen size={15} />} value={`${selectedDiary.length}`} unit="" label="Registros" />
+                  <Stat icon={<CalendarDays size={15} />} value={diasDesde != null ? `${diasDesde}` : '—'} unit="d" label="Antigüedad" />
+                </div>
+              </div>
+
+              {/* Historial reciente */}
+              <div className="mt-4 pt-4 border-t border-app-border">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="flex items-center gap-2 text-[12px] font-black uppercase tracking-wider text-brand-primary">
+                    <span className="text-[#C9A24B]"><NotebookPen size={14} /></span> Historial reciente
+                  </p>
+                  <button onClick={() => navigate('/diary')} className="text-[11px] font-bold text-brand-primary/70 hover:text-brand-primary">Ver todo</button>
+                </div>
+                <div className="space-y-2">
+                  {selectedDiary.length === 0 && <p className="text-[12px] text-brand-dark/35">Sin registros todavía</p>}
+                  {selectedDiary.slice(0, 3).map(e => (
+                    <div key={e.id} className="flex items-center gap-2.5">
+                      <span className="w-6 h-6 rounded-lg bg-app-bg flex items-center justify-center text-brand-secondary shrink-0">{diaryIcon[e.tipo]}</span>
+                      <span className="text-[11px] text-brand-dark/45 w-16 shrink-0">{fmtDate(e.fecha)}</span>
+                      <span className="text-[12px] font-semibold text-brand-dark w-20 shrink-0">{diaryLabel[e.tipo]}</span>
+                      <span className="text-[12px] text-brand-dark/55 truncate">{e.descripcion}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Etiqueta QR */}
+              <div className="mt-4 pt-4 border-t border-app-border">
+                <div className="rounded-xl border border-app-border bg-app-bg/50 p-4 flex items-center gap-4">
+                  <div className="flex-1">
+                    <p className="flex items-center gap-2 text-[12px] font-black uppercase tracking-wider text-brand-primary mb-1">
+                      <span className="text-[#C9A24B]"><QrCode size={14} /></span> Etiqueta con código QR
+                    </p>
+                    <p className="text-[11.5px] text-brand-dark/50 mb-3">Genera e imprime la etiqueta para identificar tu planta.</p>
+                    <button onClick={() => setQrLabelPlant(selected)}
+                      className="flex items-center gap-2 bg-app-card border border-app-border rounded-lg px-3 py-2 text-[12px] font-bold text-brand-dark hover:bg-app-bg transition-colors">
+                      <Printer size={14} /> Generar / Imprimir etiqueta
+                    </button>
+                  </div>
+                  <div className="bg-white p-1.5 rounded-lg border border-app-border shrink-0">
+                    <QRCodeSVG value={`carnilab:plant:${selected.id}`} size={72} bgColor="#ffffff" fgColor="#7A1E2C" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-app-card border border-app-border rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] p-10 text-center text-[13px] text-brand-dark/35">
+              Selecciona una planta para ver sus detalles
+            </div>
+          )}
+        </div>
+      </div>
+
+      {qrLabelPlant && (
+        <QRLabel plant={qrLabelPlant} onClose={() => setQrLabelPlant(null)} canPrint={true} />
+      )}
     </div>
   );
 };
+
+const Stat: React.FC<{ icon: React.ReactNode; value: string; unit: string; label: string }> = ({ icon, value, unit, label }) => (
+  <div className="rounded-xl border border-app-border bg-app-bg/40 p-2 text-center">
+    <span className="text-[#C9A24B] flex justify-center mb-0.5">{icon}</span>
+    <p className="text-[14px] font-black text-brand-dark leading-none">{value}<span className="text-[9px] font-semibold text-brand-dark/40 ml-0.5">{unit}</span></p>
+    <p className="text-[9px] text-brand-dark/45 mt-0.5">{label}</p>
+  </div>
+);
 
 export default PlantList;

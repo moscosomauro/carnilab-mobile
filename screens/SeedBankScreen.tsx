@@ -1,443 +1,258 @@
-import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { Icon } from '../components/Icon';
 import { SeedBatch } from '../types';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AssetIcon } from '../components/AssetIcon';
+import {
+  Search, Filter, ChevronDown, Plus, X, Check, Trash2, Pencil,
+  CalendarDays, MapPin, Thermometer, Boxes, Percent, FileText, Clock, Circle
+} from 'lucide-react';
 
-// --- CUSTOM ICONS ---
-const IconSeed = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
-    <path d="M12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" />
-    <path d="M12 2v4" /><path d="M12 18v4" />
-  </svg>
-);
+const estadoMeta: Record<string, { label: string; dot: string; text: string; bg: string }> = {
+  almacenada: { label: 'Almacenada', dot: 'bg-sky-500', text: 'text-sky-600', bg: 'bg-sky-50' },
+  estratificando: { label: 'En curso', dot: 'bg-amber-500', text: 'text-amber-600', bg: 'bg-amber-50' },
+  sembrada: { label: 'Sembrada', dot: 'bg-emerald-500', text: 'text-emerald-600', bg: 'bg-emerald-50' },
+  agotada: { label: 'Agotada', dot: 'bg-brand-dark/30', text: 'text-brand-dark/40', bg: 'bg-app-bg' },
+};
+
+const fmtDate = (f?: string | null) => f ? new Date(f).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+const loteId = (b: SeedBatch) => `SRA-${new Date(b.fecha_ingreso || Date.now()).getFullYear()}-${String(b.id).slice(-3).padStart(3, '0')}`;
+const daysBetween = (a: number, b: number) => Math.max(0, Math.round((a - b) / 86400000));
+
+const germTone = (g?: number) => g == null ? { text: 'text-brand-dark/40', label: '—' }
+  : g >= 70 ? { text: 'text-emerald-600', label: 'Alta' } : g >= 30 ? { text: 'text-amber-600', label: 'Media' } : { text: 'text-rose-600', label: 'Baja' };
+
+const blank = { nombre: '', especie: '', cantidad: '', origen: 'propia' as 'propia' | 'externa', estado: 'almacenada' as SeedBatch['estado'], inicio_estratificacion: '', fin_estratificacion: '', ubicacion: '', germinacion: '', notas: '' };
 
 const SeedBankScreen: React.FC = () => {
-    const navigate = useNavigate();
-    const { seedBank, addSeedBatch, updateSeedBatch, deleteSeedBatch, addPlant, addAlert } = useApp();
-    const [filter, setFilter] = useState<'all' | 'almacenada' | 'estratificando'>('all');
+  const { seedBank, addSeedBatch, updateSeedBatch, deleteSeedBatch } = useApp();
 
-    // Modal States
-    const [showAddModal, setShowAddModal] = useState(false);
-    const [editingBatch, setEditingBatch] = useState<SeedBatch | null>(null);
-    const [showActionModal, setShowActionModal] = useState<SeedBatch | null>(null);
-    const [showStratifyModal, setShowStratifyModal] = useState<SeedBatch | null>(null);
+  const [search, setSearch] = useState('');
+  const [fEstado, setFEstado] = useState('todos');
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [form, setForm] = useState({ ...blank });
 
-    // Form Logic
-    const [formData, setFormData] = useState({
-        nombre: '', especie: '', cantidad: 0, origen: 'externa' as 'propia'|'externa', notas: ''
+  const filtered = useMemo(() => seedBank.filter(b => {
+    const q = search.toLowerCase();
+    const ms = !q || b.nombre.toLowerCase().includes(q) || (b.especie || '').toLowerCase().includes(q) || loteId(b).toLowerCase().includes(q);
+    const me = fEstado === 'todos' || b.estado === fEstado;
+    return ms && me;
+  }), [seedBank, search, fEstado]);
+
+  useEffect(() => {
+    if ((selectedId === null || !seedBank.some(b => b.id === selectedId)) && seedBank.length > 0) setSelectedId(seedBank[0].id);
+  }, [seedBank, selectedId]);
+
+  const selected = useMemo(() => seedBank.find(b => b.id === selectedId) || null, [seedBank, selectedId]);
+
+  const openNew = () => { setEditId(null); setForm({ ...blank }); setShowModal(true); };
+  const openEdit = (b: SeedBatch) => {
+    setEditId(b.id);
+    setForm({
+      nombre: b.nombre, especie: b.especie || '', cantidad: String(b.cantidad || ''), origen: b.origen || 'propia',
+      estado: b.estado, inicio_estratificacion: (b.inicio_estratificacion || '').slice(0, 10), fin_estratificacion: (b.fin_estratificacion || '').slice(0, 10),
+      ubicacion: b.ubicacion || '', germinacion: b.germinacion != null ? String(b.germinacion) : '', notas: b.notas || '',
     });
-    const [stratWeeks, setStratWeeks] = useState(6);
+    setShowModal(true);
+  };
 
-    const handleOpenAdd = (batch?: SeedBatch) => {
-        if (batch) {
-            setEditingBatch(batch);
-            setFormData({
-                nombre: batch.nombre, especie: batch.especie || '', cantidad: batch.cantidad, origen: batch.origen, notas: batch.notas || ''
-            });
-        } else {
-            setEditingBatch(null);
-            setFormData({ nombre: '', especie: '', cantidad: 0, origen: 'externa', notas: '' });
-        }
-        setShowAddModal(true);
+  const save = async () => {
+    if (!form.nombre.trim()) { alert('⚠️ Ingresa un nombre / cruce para el lote'); return; }
+    const payload: any = {
+      nombre: form.nombre.trim(), especie: form.especie, cantidad: Number(form.cantidad) || 0,
+      origen: form.origen, estado: form.estado,
+      inicio_estratificacion: form.inicio_estratificacion || null, fin_estratificacion: form.fin_estratificacion || null,
+      ubicacion: form.ubicacion, germinacion: form.germinacion ? Number(form.germinacion) : undefined, notas: form.notas,
     };
+    if (editId) { const b = seedBank.find(x => x.id === editId)!; await updateSeedBatch({ ...b, ...payload }); }
+    else { payload.fecha_ingreso = new Date().toISOString(); await addSeedBatch(payload); }
+    setShowModal(false);
+  };
 
-    const handleSaveBatch = async () => {
-        if (!formData.nombre || formData.cantidad <= 0) return alert('Nombre y cantidad obligatorios');
+  const progress = (b: SeedBatch) => {
+    if (!b.inicio_estratificacion || !b.fin_estratificacion) return null;
+    const ini = new Date(b.inicio_estratificacion).getTime(), fin = new Date(b.fin_estratificacion).getTime();
+    const total = daysBetween(fin, ini); const trans = Math.min(total, daysBetween(Date.now(), ini));
+    return { total, trans, pct: total > 0 ? Math.min(100, Math.round((trans / total) * 100)) : 0 };
+  };
 
-        let result: boolean;
-        if (editingBatch) {
-            result = await updateSeedBatch({ ...editingBatch, ...formData });
-        } else {
-            result = await addSeedBatch({
-                ...formData,
-                fecha_ingreso: new Date().toISOString(),
-                estado: 'almacenada'
-            });
-        }
-
-        if (result) {
-            setShowAddModal(false);
-        } else {
-            alert('❌ Error al guardar. Revisar consola para más detalles.');
-        }
-    };
-
-    const handleStartStratification = async () => {
-        if (!showStratifyModal) return;
-        const now = new Date();
-        const end = new Date(now.getTime() + stratWeeks * 7 * 24 * 60 * 60 * 1000);
-
-        const result = await updateSeedBatch({
-            ...showStratifyModal,
-            estado: 'estratificando',
-            inicio_estratificacion: now.toISOString(),
-            fin_estratificacion: end.toISOString()
-        });
-
-        if (result) {
-            // Crear alerta para 1 semana antes del fin de estratificación
-            const oneWeekBefore = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-            // Solo crear alerta de "1 semana antes" si faltan más de 7 días
-            if (oneWeekBefore > now) {
-                await addAlert({
-                    tipo: 'estratificacion',
-                    planta: showStratifyModal.nombre,
-                    mensaje: `🌱 ¡Estás pronto a terminar el recorrido con tus semillas "${showStratifyModal.nombre}"! Faltan 7 días para completar la estratificación.`,
-                    prioridad: 'media',
-                    fecha: oneWeekBefore.toISOString(),
-                    completada: false,
-                    icon: 'ac_unit',
-                    color: '#3B82F6'
-                });
-            }
-
-            // Crear alerta para el día que termina la estratificación
-            await addAlert({
-                tipo: 'estratificacion_fin',
-                planta: showStratifyModal.nombre,
-                mensaje: `🎉 ¡Tus semillas "${showStratifyModal.nombre}" han completado la estratificación! Ya puedes sembrarlas.`,
-                prioridad: 'alta',
-                fecha: end.toISOString(),
-                completada: false,
-                icon: 'celebration',
-                color: '#10B981'
-            });
-
-            // CERRAR MODAL EXPLÍCITAMENTE
-            setShowStratifyModal(null);
-        } else {
-            alert('❌ Error al iniciar estratificación. Revisar consola para más detalles.');
-        }
-    };
-
-    // MOCK DATA PARA PROBAR UI MIENTRAS SE CONECTA
-    // const seedBankStr = [...seedBank];
-    const displayBatches = useMemo(() => {
-        if (filter === 'all') return seedBank;
-        return seedBank.filter(b => b.estado === filter);
-    }, [seedBank, filter]);
-
-    const calculateStratificationProgress = (start: string | null | undefined, end: string | null | undefined) => {
-        if (!start || !end) return 0;
-        const startDate = new Date(start).getTime();
-        const endDate = new Date(end).getTime();
-        const now = new Date().getTime();
-        
-        if (now <= startDate) return 0;
-        if (now >= endDate) return 100;
-        
-        return Math.round(((now - startDate) / (endDate - startDate)) * 100);
-    };
-
-    return (
-        <div className="min-h-screen bg-[#F5F1EB] dark:bg-slate-900 font-display pb-32 transition-colors duration-500 relative">
-            {/* Textura Papel Kraft */}
-            <div 
-                className="fixed inset-0 opacity-[0.15] dark:opacity-5 pointer-events-none z-0 mix-blend-multiply dark:mix-blend-screen"
-                style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/cardboard-flat.png")' }}
-            />
-
-            {/* HEADER */}
-            <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl sticky top-0 z-20 border-b border-[#4A5D4F]/10 dark:border-slate-700 shadow-sm">
-                <div className="flex items-center justify-between p-4 max-w-5xl mx-auto">
-                    <div className="flex items-center gap-3">
-                        <button 
-                            onClick={() => navigate(-1)}
-                            className="w-10 h-10 bg-[#F5F7F5] dark:bg-slate-700 rounded-full flex items-center justify-center hover:bg-[#E8F5E9] dark:hover:bg-slate-600 transition-colors text-[#4A5D4F] dark:text-slate-300"
-                        >
-                            <Icon name="arrow_back" />
-                        </button>
-                        <div>
-                            <h1 className="text-xl font-black text-[#2E2E2E] dark:text-white leading-tight flex items-center gap-2">
-                                Banco de Semillas
-                            </h1>
-                            <p className="text-[11px] font-bold text-[#8E877F] dark:text-slate-400 uppercase tracking-widest">{seedBank.length} Lotes Guardados</p>
-                        </div>
-                    </div>
-                </div>
-                
-                {/* TABS */}
-                <div className="flex px-4 pb-0 max-w-5xl mx-auto gap-4 overflow-x-auto no-scrollbar mask-fade-edges">
-                    {(['all', 'almacenada', 'estratificando'] as const).map(tab => (
-                        <button
-                            key={tab}
-                            onClick={() => setFilter(tab)}
-                            className={`px-4 py-3 text-sm font-black uppercase tracking-widest relative whitespace-nowrap transition-colors ${filter === tab ? 'text-[#4A5D4F] dark:text-white' : 'text-[#8E877F] dark:text-slate-400'}`}
-                        >
-                            {tab === 'all' ? 'Todo' : tab}
-                            {filter === tab && (
-                                <motion.div layoutId="seedbankTabIndicator" className="absolute bottom-0 left-0 right-0 h-1 bg-[#4A5D4F] dark:bg-slate-400 rounded-t-full" />
-                            )}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            {/* CONTENIDO PRINCIPAL */}
-            <div className="p-4 max-w-5xl mx-auto relative z-10 pt-6">
-                
-                <AnimatePresence>
-                    {displayBatches.length === 0 ? (
-                        <motion.div 
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="bg-white/40 dark:bg-slate-800/40 border border-dashed border-[#4A5D4F]/20 dark:border-slate-600 rounded-[32px] p-8 text-center flex flex-col items-center justify-center mt-10 min-h-[200px]"
-                        >
-                            <span className="text-4xl opacity-50 mb-4 grayscale">🌰</span>
-                            <h3 className="text-lg font-black text-[#2E2E2E] dark:text-white mb-2">Inventario Vacío</h3>
-                            <p className="text-sm font-medium text-[#8E877F] dark:text-slate-400 max-w-xs">No hay lotes de semillas aquí. Extrae semillas de tus híbridos cosechados o añade uno nuevo.</p>
-                        </motion.div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {displayBatches.map(batch => {
-                                const isStrat = batch.estado === 'estratificando';
-                                const progress = isStrat ? calculateStratificationProgress(batch.inicio_estratificacion, batch.fin_estratificacion) : 0;
-                                
-                                return (
-                                <motion.div
-                                    layout
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.9 }}
-                                    key={batch.id}
-                                    className="bg-[#D3C1A1]/10 dark:bg-slate-800 rounded-[28px] p-5 shadow-sm border border-[#4A5D4F]/10 dark:border-slate-700 relative overflow-hidden group"
-                                >
-                                    {/* Sello de Kraft */}
-                                    <div className="absolute -right-6 -top-6 w-24 h-24 bg-[#E2D4B7]/40 dark:bg-slate-700/50 rounded-full blur-xl pointer-events-none" />
-
-                                    <div className="flex justify-between items-start mb-3 relative z-10">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-10 h-10 rounded-full bg-[#EFEBE4] dark:bg-slate-900 flex items-center justify-center text-[#8E7C4B] border border-[#D3C1A1]/30 dark:border-slate-600">
-                                                <IconSeed />
-                                            </div>
-                                            <div>
-                                                <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-sm ${batch.origen === 'propia' ? 'bg-[#CDE8B5] text-[#4A5D4F] dark:bg-[#CDE8B5]/20' : 'bg-[#E5E7EB] text-[#4B5563] dark:bg-slate-700 dark:text-slate-300'}`}>
-                                                    {batch.origen.toUpperCase()}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="bg-white dark:bg-slate-900 px-3 py-1 rounded-full shadow-sm text-sm font-black text-[#4A5D4F] dark:text-white border border-[#F5F1EB] dark:border-slate-700 flex items-center gap-1">
-                                            {batch.cantidad} <span className="text-[10px] text-[#8E877F] dark:text-slate-400">UNID</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="relative z-10 mb-4">
-                                        <h3 className="text-xl font-black text-[#2E2E2E] dark:text-white leading-tight mb-1">{batch.nombre}</h3>
-                                        <p className="text-xs font-bold text-[#8E877F] dark:text-slate-400 flex items-center gap-1">
-                                            <Icon name="calendar_today" className="text-[12px]" /> Ingreso: {new Date(batch.fecha_ingreso).toLocaleDateString()}
-                                        </p>
-                                    </div>
-
-                                    {/* Estratificación Visualizer */}
-                                    {isStrat ? (
-                                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-4 border border-blue-100 dark:border-blue-800/50 mb-4 relative overflow-hidden">
-                                            <div className="flex justify-between items-center mb-2 z-10 relative">
-                                                <span className="text-xs font-black text-blue-800 dark:text-blue-300 uppercase tracking-widest flex items-center gap-1">
-                                                    <Icon name="ac_unit" className="text-[14px]" /> Estratificando
-                                                </span>
-                                                <span className="text-xs font-bold text-blue-600 dark:text-blue-400">{progress}%</span>
-                                            </div>
-                                            {/* Progress Bar */}
-                                            <div className="w-full h-2 bg-blue-200 dark:bg-blue-900/50 rounded-full overflow-hidden z-10 relative">
-                                                <motion.div 
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: `${progress}%` }}
-                                                    transition={{ duration: 1, delay: 0.2 }}
-                                                    className="h-full bg-blue-500 rounded-full"
-                                                />
-                                            </div>
-                                            <p className="text-[10px] font-bold text-blue-500/70 dark:text-blue-400/70 mt-2 z-10 relative">
-                                                Fin estimado: {batch.fin_estratificacion ? new Date(batch.fin_estratificacion).toLocaleDateString() : '?'}
-                                            </p>
-                                            
-                                            {/* Snowflake decos */}
-                                            <Icon name="ac_unit" className="absolute -right-2 -bottom-2 text-6xl text-blue-500/5 dark:text-blue-400/5 z-0" />
-                                        </div>
-                                    ) : (
-                                        <div className="h-10 mb-4"></div> // Spacer
-                                    )}
-
-                                    {/* Action Buttons */}
-                                    <div className="flex gap-2 relative z-10">
-                                        {!isStrat && batch.estado === 'almacenada' && (
-                                            <button 
-                                                onClick={() => setShowStratifyModal(batch)}
-                                                className="flex-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-bold text-xs py-2 rounded-xl border border-blue-200 dark:border-blue-800/50 flex items-center justify-center gap-1 hover:bg-blue-200 transition-colors"
-                                            >
-                                                <Icon name="ac_unit" className="text-[14px]" /> Frío
-                                            </button>
-                                        )}
-                                        {isStrat && (
-                                            <button
-                                                onClick={async () => {
-                                                    // Stop stratification
-                                                    const result = await updateSeedBatch({ ...batch, estado: 'almacenada', inicio_estratificacion: null, fin_estratificacion: null });
-                                                    if (!result) alert('❌ Error al detener estratificación');
-                                                }}
-                                                className="flex-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 font-bold text-xs py-2 rounded-xl border border-orange-200 dark:border-orange-800/50 flex items-center justify-center gap-1 hover:bg-orange-200 transition-colors"
-                                            >
-                                                Detener
-                                            </button>
-                                        )}
-                                        <button
-                                            onClick={async () => {
-                                                if (batch.cantidad < 10) return alert('No tienes suficientes semillas para este lote');
-                                                
-                                                if (window.confirm(`¿Sembrar 10 semillas de "${batch.nombre}" y crear un nuevo Lote de Germinación en tu inventario?`)) {
-                                                    console.log('[SeedBank] Iniciando siembra para:', batch.nombre);
-                                                    const result = await updateSeedBatch({ ...batch, cantidad: batch.cantidad - 10 });
-                                                    console.log('[SeedBank] Resultado updateSeedBatch:', result);
-                                                    
-                                                    if (result) {
-                                                        console.log('[SeedBank] Intentando crear planta en inventario...');
-                                                        const newPlant = await addPlant({
-                                                            nombre: `Lote Germinación: ${batch.nombre}`,
-                                                            especie: batch.especie || 'Desconocida',
-                                                            fecha_adquisicion: new Date().toISOString().split('T')[0],
-                                                            estado: 'saludable',
-                                                            imagen: null,
-                                                            notas: `Semillas sembradas desde el Banco de Semillas. Lote original: ${batch.nombre}.`,
-                                                            origen: batch.origen === 'propia' ? 'Cruza Propia' : 'Compra Externa',
-                                                            ubicacion: 'Semillero / Germinador'
-                                                        });
-                                                        
-                                                        console.log('[SeedBank] Resultado addPlant:', newPlant);
-                                                        
-                                                        if (newPlant) {
-                                                            alert('✅ 10 Semillas sembradas. Se ha creado un "Lote Germinación" en tu Inventario de Plantas.');
-                                                        } else {
-                                                            alert('❌ Se descontaron las semillas pero falló la creación del lote en el inventario. Revisa la consola.');
-                                                        }
-                                                    } else {
-                                                        alert('❌ Error al actualizar cantidad de semillas.');
-                                                    }
-                                                }
-                                            }}
-                                            className="flex-1 bg-white dark:bg-slate-700 text-[#4A5D4F] dark:text-slate-200 font-bold text-xs py-2 rounded-xl border border-[#E5E7EB] dark:border-slate-600 flex items-center justify-center gap-1 hover:bg-[#F5F7F5] transition-colors"
-                                        >
-                                            <span className="text-[16px]">🌱</span> Sembrar 10x
-                                        </button>
-                                    </div>
-                                    
-                                    {/* Edit trigger */}
-                                    <button 
-                                        onClick={() => setShowActionModal(batch)}
-                                        className="absolute top-4 right-4 text-[#8E877F] dark:text-slate-500 hover:text-[#4A5D4F] dark:hover:text-slate-300 transition-colors z-20 opacity-0 group-hover:opacity-100 focus:opacity-100"
-                                    >
-                                        <Icon name="more_vert" />
-                                    </button>
-                                </motion.div>
-                                );
-                            })}
-                        </div>
-                    )}
-                </AnimatePresence>
-            </div>
-
-            {/* FAB Add */}
-            <div className="fixed bottom-24 right-6 z-40">
-                <button 
-                    onClick={() => handleOpenAdd()} 
-                    className="w-14 h-14 bg-[#4A5D4F] rounded-full shadow-[0_10px_25px_rgba(74,93,79,0.4)] flex items-center justify-center text-white active:scale-90 transition-transform hover:rotate-90 duration-300 border-[3px] border-white dark:border-slate-800"
-                >
-                    <Icon name="add" className="text-2xl" />
-                </button>
-            </div>
-
-            {/* MODAL AGREGAR / EDITAR */}
-            <AnimatePresence>
-                {showAddModal && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
-                        <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="bg-[#F5F1EB] dark:bg-slate-900 w-full sm:max-w-md p-6 rounded-t-3xl sm:rounded-3xl shadow-xl max-h-[90vh] overflow-y-auto">
-                            <h2 className="text-xl font-black text-[#2E2E2E] dark:text-white mb-4">{editingBatch ? 'Editar Lote' : 'Añadir Semillas'}</h2>
-                            
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="text-xs font-bold text-[#8E877F] dark:text-slate-400">Nombre del Lote / Cruza *</label>
-                                    <input type="text" value={formData.nombre} onChange={e => setFormData({...formData, nombre: e.target.value})} className="w-full mt-1 p-3 rounded-2xl bg-white dark:bg-slate-800 border border-[#D3C1A1]/30 dark:border-slate-700 outline-none text-[#2E2E2E] dark:text-white" placeholder="Ej: Nepenthes x Alata" />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-xs font-bold text-[#8E877F] dark:text-slate-400">Cantidad Aprox. *</label>
-                                        <input type="number" value={formData.cantidad} onChange={e => setFormData({...formData, cantidad: Number(e.target.value)})} className="w-full mt-1 p-3 rounded-2xl bg-white dark:bg-slate-800 border border-[#D3C1A1]/30 dark:border-slate-700 outline-none text-[#2E2E2E] dark:text-white text-center font-black" />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-[#8E877F] dark:text-slate-400">Origen</label>
-                                        <select value={formData.origen} onChange={e => setFormData({...formData, origen: e.target.value as any})} className="w-full mt-1 p-3 rounded-2xl bg-white dark:bg-slate-800 border border-[#D3C1A1]/30 dark:border-slate-700 outline-none text-[#2E2E2E] dark:text-white">
-                                            <option value="externa">Comprada/Externa</option>
-                                            <option value="propia">Cruza Propia</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                {formData.origen === 'externa' && (
-                                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="overflow-hidden">
-                                        <label className="text-xs font-bold text-[#8E877F] dark:text-slate-400">¿De dónde provienen? (Opcional)</label>
-                                        <input type="text" value={formData.notas} onChange={e => setFormData({...formData, notas: e.target.value})} className="w-full mt-1 p-3 rounded-2xl bg-white dark:bg-slate-800 border border-[#D3C1A1]/30 dark:border-slate-700 outline-none text-[#2E2E2E] dark:text-white" placeholder="Ej: Compradas a CarniLab" />
-                                    </motion.div>
-                                )}
-                                
-                                <button onClick={handleSaveBatch} className="w-full py-3 bg-[#4A5D4F] text-white rounded-2xl font-black mt-6 hover:bg-[#3d4b40] transition-colors">{editingBatch ? 'Guardar Cambios' : 'Añadir al Banco'}</button>
-                                <button onClick={() => setShowAddModal(false)} className="w-full py-3 text-[#8E877F] dark:text-slate-400 font-bold hover:text-[#2E2E2E] dark:hover:text-white transition-colors">Cancelar</button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* MODAL ACTION MENU */}
-            <AnimatePresence>
-                {showActionModal && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowActionModal(null)}>
-                        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="bg-white dark:bg-slate-900 w-full sm:max-w-xs p-2 rounded-3xl shadow-xl flex flex-col" onClick={e => e.stopPropagation()}>
-                            <button onClick={() => { handleOpenAdd(showActionModal); setShowActionModal(null); }} className="w-full p-4 text-left font-bold text-[#2E2E2E] dark:text-white hover:bg-[#F5F1EB] dark:hover:bg-slate-800 rounded-2xl flex items-center gap-3">
-                                <Icon name="edit" /> Editar Lote
-                            </button>
-                            <button onClick={async () => {
-                                if(window.confirm('¿Eliminar este lote?')) {
-                                    await deleteSeedBatch(showActionModal.id);
-                                }
-                                setShowActionModal(null);
-                            }} className="w-full p-4 text-left font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-2xl flex items-center gap-3">
-                                <Icon name="delete" /> Eliminar Permanente
-                            </button>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* MODAL STRATIFY CONFIG */}
-            <AnimatePresence>
-                {showStratifyModal && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-blue-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowStratifyModal(null)}>
-                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white dark:bg-slate-900 w-full max-w-sm p-8 rounded-[32px] shadow-2xl flex flex-col items-center" onClick={e => e.stopPropagation()}>
-                            <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-500 text-3xl mb-4">
-                                <Icon name="ac_unit" />
-                            </div>
-                            <h2 className="text-xl font-black text-[#2E2E2E] dark:text-white mb-2 text-center">Estratificación en Frío</h2>
-                            <p className="text-sm font-medium text-[#8E877F] dark:text-slate-400 text-center mb-6">Iniciando proceso para {showStratifyModal.nombre}. ¿Cuánto tiempo deben estar en frío?</p>
-                            
-                            <div className="flex items-center gap-4 mb-8">
-                                <button onClick={() => setStratWeeks(Math.max(1, stratWeeks - 1))} className="w-10 h-10 rounded-full bg-[#F5F1EB] dark:bg-slate-800 flex items-center justify-center text-[#2E2E2E] dark:text-white font-bold hover:bg-[#EAE5DF] dark:hover:bg-slate-700">-</button>
-                                <span className="text-2xl font-black text-[#2E2E2E] dark:text-white text-center min-w-[3rem]">{stratWeeks} <span className="text-xs block text-[#8E877F] dark:text-slate-400 uppercase tracking-widest mt-1">Semanas</span></span>
-                                <button onClick={() => setStratWeeks(stratWeeks + 1)} className="w-10 h-10 rounded-full bg-[#F5F1EB] dark:bg-slate-800 flex items-center justify-center text-[#2E2E2E] dark:text-white font-bold hover:bg-[#EAE5DF] dark:hover:bg-slate-700">+</button>
-                            </div>
-
-                            <button onClick={handleStartStratification} className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl font-black transition-colors shadow-lg shadow-blue-500/30">
-                                Iniciar Estratificación
-                            </button>
-                            <button onClick={() => setShowStratifyModal(null)} className="w-full mt-2 py-3 text-[#8E877F] dark:text-slate-400 font-bold hover:text-[#2E2E2E] dark:hover:text-white transition-colors">
-                                Cancelar
-                            </button>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+  return (
+    <div className="px-4 lg:px-8 py-6 max-w-[1500px] mx-auto">
+      {/* Encabezado */}
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-12 h-12 rounded-xl bg-[#C9A24B]/12 flex items-center justify-center"><AssetIcon name="icon-bank-seed" size={26} /></div>
+        <div>
+          <h1 className="font-accent text-[32px] font-bold text-brand-dark leading-none">Banco de semillas</h1>
+          <p className="text-[12.5px] text-brand-dark/50 mt-1">Gestiona y haz seguimiento de tus lotes de semillas y su estratificación</p>
         </div>
-    );
+      </div>
+
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-3 mb-5">
+        <div className="relative flex-1 min-w-[220px] max-w-md">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-dark/30" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por lote ID, especie o cruce…" className="w-full bg-app-card border border-app-border rounded-full pl-9 pr-4 py-2 text-[13px] text-brand-dark placeholder:text-brand-dark/30 focus:outline-none focus:ring-2 focus:ring-brand-primary/20" />
+        </div>
+        <div className="relative">
+          <button onClick={() => setShowFilters(v => !v)} className="flex items-center gap-2 bg-app-card border border-app-border rounded-full px-4 py-2 text-[13px] font-semibold text-brand-dark hover:bg-app-bg"><Filter size={14} className="text-[#C9A24B]" /> Filtros <ChevronDown size={13} className="text-brand-dark/40" /></button>
+          {showFilters && (
+            <div className="absolute z-30 mt-2 w-48 bg-app-card border border-app-border rounded-xl shadow-lg p-1.5">
+              {[['todos', 'Todos'], ['almacenada', 'Almacenadas'], ['estratificando', 'En curso'], ['sembrada', 'Sembradas'], ['agotada', 'Agotadas']].map(([v, l]) => (
+                <button key={v} onClick={() => { setFEstado(v); setShowFilters(false); }} className={`w-full flex items-center justify-between text-left px-3 py-2 rounded-lg text-[13px] font-medium ${fEstado === v ? 'bg-brand-primary/10 text-brand-primary' : 'text-brand-dark/70 hover:bg-app-bg'}`}>{l} {fEstado === v && <Check size={14} />}</button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="flex-1" />
+        <button onClick={openNew} className="flex items-center gap-2 bg-brand-primary text-white rounded-full px-5 py-2 text-[13px] font-bold shadow-md shadow-brand-primary/20 hover:brightness-110 transition-all active:scale-95"><Plus size={16} /> Nuevo lote</button>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
+        {/* ===== Tabla ===== */}
+        <div className="xl:col-span-8">
+          <div className="bg-app-card border border-app-border rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden">
+            <div className="flex items-center justify-between px-5 pt-4 pb-2">
+              <p className="text-[12px] font-bold text-brand-dark/45">Total: {filtered.length} lotes</p>
+              <div className="hidden md:flex items-center gap-3 text-[11px] text-brand-dark/50">
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Alta (≥70%)</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500" /> Media (30-69%)</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500" /> Baja (&lt;30%)</span>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead><tr className="text-[10px] uppercase tracking-wider text-brand-dark/40 border-y border-app-border">
+                  <th className="font-bold px-5 py-2.5">Lote ID</th><th className="font-bold px-3 py-2.5 hidden md:table-cell">Especie / cruce</th><th className="font-bold px-3 py-2.5">Cantidad</th><th className="font-bold px-3 py-2.5">Estado</th><th className="font-bold px-3 py-2.5 hidden lg:table-cell">Inicio estrat.</th><th className="font-bold px-3 py-2.5 hidden xl:table-cell">Fin estimado</th><th className="font-bold px-3 py-2.5">Germ.</th>
+                </tr></thead>
+                <tbody className="divide-y divide-app-border">
+                  {filtered.map(b => {
+                    const m = estadoMeta[b.estado] || estadoMeta.almacenada; const g = germTone(b.germinacion); const active = b.id === selectedId;
+                    return (
+                      <tr key={b.id} onClick={() => setSelectedId(b.id)} className={`cursor-pointer ${active ? 'bg-brand-primary/[0.06]' : 'hover:bg-app-bg/60'}`}>
+                        <td className="px-5 py-2.5"><div className="flex items-center gap-2 relative">{active && <span className="absolute left-0 w-1 h-6 rounded-r bg-[#C9A24B] -ml-5" />}<Circle size={8} className={active ? 'text-brand-primary fill-brand-primary' : 'text-brand-dark/20'} /><span className="text-[12.5px] font-bold text-brand-dark">{loteId(b)}</span></div></td>
+                        <td className="px-3 py-2.5 hidden md:table-cell"><span className="text-[12px] italic text-brand-dark/55">{b.especie || b.nombre}</span></td>
+                        <td className="px-3 py-2.5"><span className="text-[12px] text-brand-dark/70">{b.cantidad.toLocaleString('es-AR')} semillas</span></td>
+                        <td className="px-3 py-2.5"><span className={`inline-flex items-center gap-1.5 text-[12px] font-semibold ${m.text}`}><span className={`w-1.5 h-1.5 rounded-full ${m.dot}`} /> {m.label}</span></td>
+                        <td className="px-3 py-2.5 hidden lg:table-cell"><span className="text-[12px] text-brand-dark/55">{fmtDate(b.inicio_estratificacion)}</span></td>
+                        <td className="px-3 py-2.5 hidden xl:table-cell"><span className="text-[12px] text-brand-dark/55">{fmtDate(b.fin_estratificacion)}</span></td>
+                        <td className="px-3 py-2.5"><span className={`text-[12px] font-bold ${g.text}`}>{b.germinacion != null ? `${b.germinacion}%` : '—'}</span></td>
+                      </tr>
+                    );
+                  })}
+                  {filtered.length === 0 && <tr><td colSpan={7} className="px-5 py-14 text-center text-[13px] text-brand-dark/35">No hay lotes 🌰</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* ===== Panel de detalle ===== */}
+        <div className="xl:col-span-4">
+          {selected ? (() => {
+            const m = estadoMeta[selected.estado] || estadoMeta.almacenada; const g = germTone(selected.germinacion); const pr = progress(selected);
+            return (
+              <div className="bg-app-card border border-app-border rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] p-5 xl:sticky xl:top-20">
+                <div className="flex items-start justify-between mb-1">
+                  <h2 className="font-accent text-[22px] font-bold text-brand-dark">{loteId(selected)}</h2>
+                  <span className={`inline-flex items-center gap-1.5 text-[12px] font-semibold rounded-full px-3 py-1 ${m.bg} ${m.text}`}><span className={`w-1.5 h-1.5 rounded-full ${m.dot}`} /> {m.label}</span>
+                </div>
+                <p className="text-[13px] italic text-brand-dark/50 mb-4">{selected.especie || selected.nombre}</p>
+
+                {pr && (
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between mb-1.5"><span className="text-[12px] font-semibold text-brand-dark/55">Progreso de estratificación</span><span className="text-[14px] font-black text-[#9a7b2f]">{pr.pct}%</span></div>
+                    <div className="h-2.5 rounded-full bg-app-bg overflow-hidden"><div className="h-full rounded-full bg-gradient-to-r from-[#C9A24B] to-brand-secondary" style={{ width: `${pr.pct}%` }} /></div>
+                    <div className="flex items-center justify-between mt-1.5 text-[11px] text-brand-dark/45"><span>Transcurrido: {pr.trans} días</span><span>Total estimado: {pr.total} días</span></div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <StatBox icon={<Boxes size={14} />} label="Cantidad" value={selected.cantidad.toLocaleString('es-AR')} sub="semillas" />
+                  <StatBox icon={<CalendarDays size={14} />} label="Inicio" value={fmtDate(selected.inicio_estratificacion)} />
+                  <StatBox icon={<CalendarDays size={14} />} label="Fin estimado" value={fmtDate(selected.fin_estratificacion)} />
+                  <StatBox icon={<Percent size={14} />} label="Germinación" value={selected.germinacion != null ? `${selected.germinacion}%` : '—'} sub={g.label} valueClass={g.text} />
+                  <StatBox icon={<MapPin size={14} />} label="Ubicación" value={selected.ubicacion || '—'} />
+                  <StatBox icon={<Thermometer size={14} />} label="Temperatura" value="4 ±1 °C" sub="recomendado" />
+                </div>
+
+                {selected.notas && (
+                  <div className="mb-4">
+                    <p className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-brand-dark/40 mb-1"><FileText size={12} /> Notas</p>
+                    <p className="text-[12.5px] text-brand-dark/65 italic leading-relaxed">{selected.notas}</p>
+                  </div>
+                )}
+
+                <div className="mb-4">
+                  <p className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-brand-dark/40 mb-2"><Clock size={12} /> Línea de tiempo</p>
+                  <div className="relative pl-4 border-l border-app-border space-y-2.5">
+                    <Timeline label="Lote creado" date={fmtDate(selected.fecha_ingreso)} desc="Semillas registradas" />
+                    {selected.inicio_estratificacion && <Timeline label="Inicio de estratificación" date={fmtDate(selected.inicio_estratificacion)} desc="En cámara fría" />}
+                    {selected.fin_estratificacion && <Timeline label="Fin estimado" date={fmtDate(selected.fin_estratificacion)} desc="Listas para siembra" />}
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button onClick={() => openEdit(selected)} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-app-card border border-app-border py-2.5 text-[13px] font-bold text-brand-dark hover:bg-app-bg"><Pencil size={14} /> Editar lote</button>
+                  <button onClick={() => { if (window.confirm('¿Eliminar este lote?')) { deleteSeedBatch(selected.id); setSelectedId(null); } }} className="rounded-xl border border-app-border px-3 text-rose-500 hover:bg-rose-50"><Trash2 size={15} /></button>
+                </div>
+              </div>
+            );
+          })() : (
+            <div className="bg-app-card border border-app-border rounded-2xl p-10 text-center text-[13px] text-brand-dark/35">Selecciona un lote para ver sus detalles</div>
+          )}
+        </div>
+      </div>
+
+      {/* Modal Nuevo / Editar lote */}
+      {showModal && (
+        <div className="fixed inset-0 bg-brand-dark/40 backdrop-blur-sm z-[100] flex items-center justify-center p-6" onClick={() => setShowModal(false)}>
+          <div className="bg-app-card rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto animate-scale-in" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-accent text-[22px] font-bold text-brand-dark">{editId ? 'Editar lote' : 'Nuevo lote'}</h2>
+              <button onClick={() => setShowModal(false)} className="w-8 h-8 rounded-lg hover:bg-app-bg flex items-center justify-center text-brand-dark/50"><X size={18} /></button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <L label="Nombre / cruce *" full><input value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} placeholder="Ej: Scarlet × Rubra (Cosecha)" className={inp} /></L>
+              <L label="Especie"><input value={form.especie} onChange={e => setForm({ ...form, especie: e.target.value })} placeholder="Sarracenia leucophylla" className={inp} /></L>
+              <L label="Cantidad (semillas)"><input type="number" value={form.cantidad} onChange={e => setForm({ ...form, cantidad: e.target.value })} placeholder="0" className={inp} /></L>
+              <L label="Origen"><select value={form.origen} onChange={e => setForm({ ...form, origen: e.target.value as any })} className={inp + ' cursor-pointer'}><option value="propia">Propia</option><option value="externa">Externa</option></select></L>
+              <L label="Estado"><select value={form.estado} onChange={e => setForm({ ...form, estado: e.target.value as any })} className={inp + ' cursor-pointer'}><option value="almacenada">Almacenada</option><option value="estratificando">En estratificación</option><option value="sembrada">Sembrada</option><option value="agotada">Agotada</option></select></L>
+              <L label="Inicio estratificación"><input type="date" value={form.inicio_estratificacion} onChange={e => setForm({ ...form, inicio_estratificacion: e.target.value })} className={inp} /></L>
+              <L label="Fin estimado"><input type="date" value={form.fin_estratificacion} onChange={e => setForm({ ...form, fin_estratificacion: e.target.value })} className={inp} /></L>
+              <L label="Ubicación"><input value={form.ubicacion} onChange={e => setForm({ ...form, ubicacion: e.target.value })} placeholder="Cámara fría 1 · Estante B" className={inp} /></L>
+              <L label="Germinación (%)"><input type="number" value={form.germinacion} onChange={e => setForm({ ...form, germinacion: e.target.value })} placeholder="0" className={inp} /></L>
+              <L label="Notas" full><textarea value={form.notas} onChange={e => setForm({ ...form, notas: e.target.value })} rows={2} placeholder="Notas del lote…" className={inp + ' resize-none h-auto py-2'} /></L>
+            </div>
+            <div className="flex gap-3 pt-5">
+              <button onClick={() => setShowModal(false)} className="flex-1 rounded-xl border border-app-border py-2.5 text-[13px] font-bold text-brand-dark hover:bg-app-bg">Cancelar</button>
+              <button onClick={save} disabled={!form.nombre.trim()} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-brand-primary text-white py-2.5 text-[13px] font-bold shadow-md shadow-brand-primary/20 hover:brightness-110 disabled:opacity-50"><Check size={15} /> {editId ? 'Guardar cambios' : 'Crear lote'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
+
+const inp = "w-full h-11 rounded-xl bg-app-card border border-app-border px-3 text-[13px] text-brand-dark placeholder:text-brand-dark/30 focus:outline-none focus:ring-2 focus:ring-brand-primary/20";
+const L: React.FC<{ label: string; full?: boolean; children: React.ReactNode }> = ({ label, full, children }) => (
+  <div className={full ? 'col-span-2' : ''}><label className="block text-[12px] font-semibold text-brand-dark/55 mb-1.5">{label}</label>{children}</div>
+);
+const StatBox: React.FC<{ icon: React.ReactNode; label: string; value: string; sub?: string; valueClass?: string }> = ({ icon, label, value, sub, valueClass }) => (
+  <div className="rounded-xl border border-app-border bg-app-bg/40 p-2.5">
+    <p className="flex items-center gap-1 text-[10px] text-brand-dark/45 mb-0.5"><span className="text-[#C9A24B]">{icon}</span> {label}</p>
+    <p className={`text-[13px] font-black leading-tight ${valueClass || 'text-brand-dark'}`}>{value}</p>
+    {sub && <p className="text-[9.5px] text-brand-dark/40">{sub}</p>}
+  </div>
+);
+const Timeline: React.FC<{ label: string; date: string; desc: string }> = ({ label, date, desc }) => (
+  <div className="relative">
+    <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-brand-secondary border-2 border-app-card" />
+    <div className="flex items-center justify-between"><p className="text-[12px] font-bold text-brand-dark">{label}</p><span className="text-[10.5px] text-brand-dark/40">{date}</span></div>
+    <p className="text-[11px] text-brand-dark/45">{desc}</p>
+  </div>
+);
 
 export default SeedBankScreen;

@@ -277,6 +277,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         semillas_obtenidas: cross.semillas_obtenidas || 0,
         plantas_germinadas: cross.plantas_germinadas || 0,
         estado: cross.estado || 'en_proceso',
+        objetivo: (cross as any).objetivo || '',
         notas: cross.notas || '',
         madre_imagen: (cross as any).madre_imagen || null,
         padre_imagen: (cross as any).padre_imagen || null,
