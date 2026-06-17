@@ -22,6 +22,7 @@ const QRDesignShowcase = lazy(() => import('./screens/QRDesignShowcase').then(m 
 const SeedBankScreen = lazy(() => import('./screens/SeedBankScreen'));
 const LabScreen = lazy(() => import('./screens/Lab'));
 const SyncScreen = lazy(() => import('./screens/SyncScreen'));
+const Pollination = lazy(() => import('./screens/Pollination'));
 
 // Pantallas móviles (captura de campo)
 const MobileHome = lazy(() => import('./screens/mobile/MobileHome'));
@@ -123,6 +124,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/alerts" element={<Alerts />} />
         <Route path="/diary" element={<Diary />} />
         <Route path="/crosses" element={<CrossesScreen />} />
+        <Route path="/pollination" element={<Pollination />} />
         <Route path="/seed-bank" element={<SeedBankScreen />} />
         <Route path="/backup" element={<BackupScreen />} />
         <Route path="/profile" element={<ProfileScreen />} />

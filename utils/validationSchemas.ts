@@ -82,6 +82,8 @@ export const PlantSchema = z.object({
   sustrato: z.string().max(100).trim().optional().or(z.literal('')),
   tamano_maceta: z.string().max(50).trim().optional().or(z.literal('')),
   etiquetas: z.array(z.string().max(40).trim()).max(20).optional(),
+  en_floracion: z.boolean().optional(),
+  fecha_floracion: z.string().optional().or(z.literal('')),
 });
 
 export type PlantInput = z.infer<typeof PlantSchema>;

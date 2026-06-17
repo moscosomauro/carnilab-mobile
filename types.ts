@@ -20,6 +20,9 @@ export interface Plant {
   sustrato?: string;
   tamano_maceta?: string;
   etiquetas?: string[];
+  // Plan de polinización: marca de floración para la matriz de cruzas
+  en_floracion?: boolean;
+  fecha_floracion?: string;
 }
 
 export interface PlantImage {

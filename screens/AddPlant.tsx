@@ -75,7 +75,7 @@ const AddPlant: React.FC = () => {
     nombre: '', especie: '', fecha_adquisicion: new Date().toISOString().split('T')[0],
     origen: '', precio: '', estado: 'saludable' as 'saludable' | 'regular' | 'critico',
     ubicacion: '', notas: '', en_venta: false, precio_venta: '',
-    iluminacion: '', humedad: '', sustrato: '', tamano_maceta: '',
+    iluminacion: '', humedad: '', sustrato: '', tamano_maceta: '', en_floracion: false,
   });
   const [etiquetas, setEtiquetas] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
@@ -101,7 +101,7 @@ const AddPlant: React.FC = () => {
         ubicacion: editingPlant.ubicacion || '', notas: editingPlant.notas || '',
         en_venta: !!editingPlant.en_venta, precio_venta: editingPlant.precio_venta?.toString() || '',
         iluminacion: editingPlant.iluminacion || '', humedad: editingPlant.humedad || '',
-        sustrato: editingPlant.sustrato || '', tamano_maceta: editingPlant.tamano_maceta || '',
+        sustrato: editingPlant.sustrato || '', tamano_maceta: editingPlant.tamano_maceta || '', en_floracion: !!editingPlant.en_floracion,
       });
       setEtiquetas(editingPlant.etiquetas || []);
       if (editingPlant.images?.length) setImages(editingPlant.images.map(i => ({ id: String(i.id), url: i.image_url, isNew: false })));
@@ -140,6 +140,8 @@ const AddPlant: React.FC = () => {
         en_venta: formData.en_venta, precio_venta: formData.en_venta && formData.precio_venta ? Number(formData.precio_venta) : null,
         iluminacion: formData.iluminacion || '', humedad: formData.humedad || '',
         sustrato: formData.sustrato || '', tamano_maceta: formData.tamano_maceta || '', etiquetas,
+        en_floracion: formData.en_floracion,
+        fecha_floracion: formData.en_floracion ? (editingPlant?.fecha_floracion || new Date().toISOString()) : '',
       };
       const v = validateData(PlantSchema, toValidate);
       if (!v.success) { alert(`❌ Datos inválidos:\n\n${v.errors?.join('\n')}`); setIsSaving(false); return; }
@@ -272,6 +274,10 @@ const AddPlant: React.FC = () => {
               <div>
                 <label className={labelCls}>Tamaño de maceta</label>
                 <input value={formData.tamano_maceta} onChange={e => set('tamano_maceta', e.target.value)} placeholder="Ej: 12 cm" className={inputCls} />
+              </div>
+              <div className="flex items-center justify-between rounded-xl bg-app-card border border-app-border px-4 h-11 self-end">
+                <span className="text-[13px] font-semibold text-brand-dark/70">En floración</span>
+                <button type="button" onClick={() => set('en_floracion', !formData.en_floracion)} className={`w-11 h-6 rounded-full relative transition-colors ${formData.en_floracion ? 'bg-[#C9A24B]' : 'bg-app-border'}`}><span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${formData.en_floracion ? 'left-[22px]' : 'left-0.5'}`} /></button>
               </div>
               <div className="md:col-span-2">
                 <label className={labelCls}>Etiquetas</label>

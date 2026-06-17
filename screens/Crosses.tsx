@@ -7,7 +7,7 @@ import { AssetIcon } from '../components/AssetIcon';
 import { SpeciesIcon } from '../components/SpeciesIcon';
 import {
   Plus, X, ChevronDown, Venus, Mars, Dna, Network, Table2, Star, Calendar,
-  Target, Sprout, Trash2, Pencil, PackagePlus, Award, GitBranch, Check
+  Target, Sprout, Trash2, Pencil, PackagePlus, Award, GitBranch, Check, Flower2
 } from 'lucide-react';
 
 const OBJETIVOS = ['Mejorar coloración', 'Aumentar tamaño', 'Vigor híbrido', 'Resistencia', 'Nueva variedad', 'Otro'];
@@ -134,6 +134,9 @@ const CrossesScreen: React.FC = () => {
           <h1 className="font-accent text-[32px] font-bold text-brand-dark leading-none">Genética y cruzas</h1>
           <p className="text-[12.5px] text-brand-dark/50 mt-1">Registra y analiza cruzas para preservar y mejorar tu colección</p>
         </div>
+        <button onClick={() => navigate('/pollination')} className="flex items-center gap-2 bg-[#C9A24B]/12 text-[#9a7b2f] rounded-full px-4 py-2 text-[13px] font-bold hover:bg-[#C9A24B]/20 transition-all active:scale-95">
+          <Flower2 size={16} /> Plan de polinización
+        </button>
         <div className="hidden sm:flex gap-2">
           <Chip value={stats.proceso} label="En proceso" />
           <Chip value={stats.completas} label="Completadas" />
