@@ -20,6 +20,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Info del servidor de sincronización local (IP, puerto, token) para el QR
     getSyncInfo: (): Promise<{ ip: string; port: number; token: string; url: string }> =>
         ipcRenderer.invoke('sync:getInfo'),
+    // Notificación nativa de Windows (Fase 5) — toast del SO aunque la app no tenga foco
+    notify: (payload: { title: string; body: string; tag?: string }) =>
+        ipcRenderer.send('notify:show', payload),
     isElectron: true,
 });
 

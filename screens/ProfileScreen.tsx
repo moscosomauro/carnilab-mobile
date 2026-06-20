@@ -7,8 +7,13 @@ import { uploadImage } from '../utils/imageHelpers';
 import { AssetIcon } from '../components/AssetIcon';
 import {
   Settings, Camera, Check, Sun, Moon, Palette, Languages, Database,
-  Download, Upload, Trash2, Info, Smartphone, RefreshCw, Wifi, ChevronRight
+  Download, Upload, Trash2, Info, Smartphone, RefreshCw, Wifi, ChevronRight,
+  Bell, BellOff, BellRing
 } from 'lucide-react';
+import {
+  isElectron, notificationsSupported, notificationPermission,
+  requestNotificationPermission, notifyOS
+} from '../utils/notifications';
 
 const THEMES: { id: any; label: string; sw: string }[] = [
   { id: 'default', label: 'Default', sw: '#7A1E2C' },
@@ -29,6 +34,17 @@ const ProfileScreen: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [name, setName] = useState(user?.label || '');
   const [savedName, setSavedName] = useState(false);
+  const [notifPerm, setNotifPerm] = useState<NotificationPermission>(notificationPermission());
+
+  const enableNotifications = async () => {
+    const perm = await requestNotificationPermission();
+    setNotifPerm(perm);
+    if (perm === 'granted') {
+      notifyOS('Notificaciones activadas', 'Te avisaré cuando venza una alerta de tus plantas.', 'notif-test');
+    }
+  };
+  const testNotification = () =>
+    notifyOS('CarniLab', 'Esto es una notificación de prueba 🌱', 'notif-test');
 
   const onPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; if (!f || !user) return;
@@ -96,6 +112,54 @@ const ProfileScreen: React.FC = () => {
                 <button key={code} onClick={() => i18n.changeLanguage(code)} className={`rounded-xl border px-4 py-2 text-[13px] font-semibold transition-all ${i18n.language?.startsWith(code) ? 'border-brand-primary bg-brand-primary/5 text-brand-primary' : 'border-app-border text-brand-dark/60 hover:bg-app-bg'}`}>{label}</button>
               ))}
             </div>
+          </Card>
+
+          {/* Notificaciones */}
+          <Card icon={<Bell size={15} />} title="Notificaciones">
+            {!notificationsSupported() ? (
+              <p className="text-[13px] text-brand-dark/55">Este dispositivo no soporta notificaciones locales.</p>
+            ) : isElectron() ? (
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><BellRing size={17} /></span>
+                  <div>
+                    <p className="text-[13.5px] font-bold text-brand-dark">Activadas en Windows</p>
+                    <p className="text-[11.5px] text-brand-dark/45">Recibirás un aviso del sistema cuando venza una alerta.</p>
+                  </div>
+                </div>
+                <button onClick={testNotification} className="shrink-0 rounded-xl border border-app-border px-3.5 py-2 text-[12.5px] font-bold text-brand-dark hover:bg-app-bg">Probar</button>
+              </div>
+            ) : notifPerm === 'granted' ? (
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><BellRing size={17} /></span>
+                  <div>
+                    <p className="text-[13.5px] font-bold text-brand-dark">Notificaciones activadas</p>
+                    <p className="text-[11.5px] text-brand-dark/45">Avisos mientras CarniLab esté abierto. En iPhone, instala la app en la pantalla de inicio.</p>
+                  </div>
+                </div>
+                <button onClick={testNotification} className="shrink-0 rounded-xl border border-app-border px-3.5 py-2 text-[12.5px] font-bold text-brand-dark hover:bg-app-bg">Probar</button>
+              </div>
+            ) : notifPerm === 'denied' ? (
+              <div className="flex items-center gap-2.5">
+                <span className="w-9 h-9 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center"><BellOff size={17} /></span>
+                <div>
+                  <p className="text-[13.5px] font-bold text-brand-dark">Bloqueadas</p>
+                  <p className="text-[11.5px] text-brand-dark/45">Permite las notificaciones de CarniLab en los ajustes del navegador para reactivarlas.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-9 h-9 rounded-xl bg-[#C9A24B]/12 text-[#C9A24B] flex items-center justify-center"><Bell size={17} /></span>
+                  <div>
+                    <p className="text-[13.5px] font-bold text-brand-dark">Avisos de alertas</p>
+                    <p className="text-[11.5px] text-brand-dark/45">Recibe un aviso cuando venza una tarea de tus plantas.</p>
+                  </div>
+                </div>
+                <button onClick={enableNotifications} className="shrink-0 flex items-center gap-1.5 rounded-xl bg-brand-primary text-white px-4 py-2 text-[12.5px] font-bold shadow-md shadow-brand-primary/20 hover:brightness-110"><Bell size={14} /> Activar</button>
+              </div>
+            )}
           </Card>
 
           {/* Datos / Backup */}

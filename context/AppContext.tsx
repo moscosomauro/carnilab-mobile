@@ -7,6 +7,7 @@ import { objectiveEvents } from '../utils/dailyObjectives';
 import { loadTable, saveTable, migrateFromLocalStorage, addTombstone, TableKey } from '../db/localDb';
 import { stamp } from '../db/sync';
 import { syncNow, isPaired } from '../db/syncClient';
+import { notifyOS } from '../utils/notifications';
 
 // ============================================================
 // APP CONTEXT - 100% LOCAL
@@ -478,6 +479,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const runChecks = () => {
       const now = new Date().getTime();
       let notificationFound = false;
+      const justDue: Alert[] = [];
 
       const updatedAlerts = alerts.map(alert => {
         if (alert.completada || alert.notified) return alert;
@@ -490,6 +492,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             setActiveNotification(alert);
             notificationFound = true;
           }
+          justDue.push(alert);
           return { ...alert, notified: true };
         }
         return alert;
@@ -498,6 +501,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (JSON.stringify(updatedAlerts) !== JSON.stringify(alerts)) {
         setAlerts(updatedAlerts);
         saveToLocal('alerts', updatedAlerts);
+        // Notificación local del SO (Windows nativo vía Electron, o Web Notification
+        // en navegador/PWA) por cada alerta que acaba de vencer. Fase 5.
+        justDue.forEach(a => {
+          const titulo = a.planta && a.planta !== 'General' ? `${a.planta} · CarniLab` : 'CarniLab';
+          notifyOS(titulo, a.mensaje, `alert-${a.id}`);
+        });
       }
     };
 
