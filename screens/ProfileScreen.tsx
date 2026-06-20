@@ -57,18 +57,34 @@ const ProfileScreen: React.FC = () => {
   const [cloudBusy, setCloudBusy] = useState(false);
   const [lastSync, setLastSync] = useState(getCloudLastSync());
 
-  const saveSpace = () => {
+  // Guarda el código y SUBE de inmediato el estado local a la nube, así cuando
+  // el iPhone conecte con el mismo código ya encuentra los datos del escritorio.
+  const saveSpace = async () => {
     const clean = spaceCode.trim();
     if (!clean) return;
     setSpaceId(clean);
     setSpaceCode(clean);
-    setCloudMsg({ ok: true, text: 'Código guardado. Usá el MISMO código en la PC y en el iPhone.' });
+    setCloudBusy(true);
+    setCloudMsg({ ok: true, text: 'Subiendo a la nube…' });
+    const r = await syncCloudNow();
+    setCloudBusy(false);
+    setLastSync(getCloudLastSync());
+    setCloudMsg(r.ok
+      ? { ok: true, text: 'Listo. Usá el MISMO código en el iPhone y ya verás tus datos.' }
+      : { ok: false, text: r.error || 'No se pudo subir a la nube.' });
   };
-  const genSpace = () => {
+  const genSpace = async () => {
     const id = generateSpaceId();
     setSpaceCode(id);
     setSpaceId(id);
-    setCloudMsg({ ok: true, text: 'Código generado. Copialo y ponelo igual en el iPhone.' });
+    setCloudBusy(true);
+    setCloudMsg({ ok: true, text: 'Subiendo a la nube…' });
+    const r = await syncCloudNow();
+    setCloudBusy(false);
+    setLastSync(getCloudLastSync());
+    setCloudMsg(r.ok
+      ? { ok: true, text: `Código ${id} listo y datos subidos. Poné ese código en el iPhone.` }
+      : { ok: false, text: r.error || 'No se pudo subir a la nube.' });
   };
   const copySpace = () => { if (spaceCode) navigator.clipboard?.writeText(spaceCode); };
   const runCloudSync = async () => {
