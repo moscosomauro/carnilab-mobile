@@ -213,7 +213,7 @@ const ProfileScreen: React.FC = () => {
                 </p>
                 <label className="block text-[12px] font-semibold text-brand-dark/55 mb-1.5">Código de espacio</label>
                 <div className="flex gap-2 mb-2">
-                  <input value={spaceCode} onChange={e => setSpaceCode(e.target.value)} placeholder="ej: carni-mi-codigo-secreto" className="flex-1 h-11 rounded-xl bg-app-card border border-app-border px-3 text-[13px] text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-primary/20" />
+                  <input value={spaceCode} onChange={e => setSpaceCode(e.target.value.toUpperCase())} placeholder="ej: H7K-M3Q" maxLength={20} className="flex-1 h-11 rounded-xl bg-app-card border border-app-border px-3 text-[14px] font-mono tracking-wider text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-primary/20" />
                   <button onClick={copySpace} title="Copiar" className="w-11 h-11 shrink-0 rounded-xl border border-app-border flex items-center justify-center text-brand-dark/60 hover:bg-app-bg"><Copy size={16} /></button>
                 </div>
                 <div className="flex flex-wrap gap-2 mb-3">

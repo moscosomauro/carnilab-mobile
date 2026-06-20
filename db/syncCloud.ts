@@ -24,8 +24,14 @@ export function getSpaceId(): string | null {
   return v && v.trim() ? v.trim() : null;
 }
 
+// Normaliza el código: sin espacios y en MAYÚSCULAS, así no falla si en un
+// dispositivo lo tipean distinto (p. ej. "h7k-m3q" vs "H7K-M3Q").
+export function normalizeSpaceId(id: string): string {
+  return id.trim().toUpperCase();
+}
+
 export function setSpaceId(id: string): void {
-  const clean = id.trim();
+  const clean = normalizeSpaceId(id);
   if (clean) localStorage.setItem(SPACE_KEY, clean);
 }
 
@@ -33,11 +39,19 @@ export function clearSpaceId(): void {
   localStorage.removeItem(SPACE_KEY);
 }
 
-// Genera un código de espacio nuevo (para la PC la primera vez).
+// Genera un código de espacio CORTO y fácil de tipear, tipo "H7K-M3Q".
+// Alfabeto sin caracteres ambiguos (sin I, O, 0, 1). 6 símbolos =
+// ~1.000 millones de combinaciones, de sobra para uso personal.
 export function generateSpaceId(): string {
-  const rnd = (globalThis.crypto as any)?.randomUUID?.()
-    || Math.random().toString(36).slice(2) + Date.now().toString(36);
-  return `carni-${rnd}`;
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const n = 6;
+  const rnd = new Uint32Array(n);
+  (globalThis.crypto as any)?.getRandomValues?.(rnd);
+  const chars = Array.from({ length: n }, (_, i) => {
+    const r = rnd[i] || Math.floor(Math.random() * 0xffffffff);
+    return alphabet[r % alphabet.length];
+  });
+  return `${chars.slice(0, 3).join('')}-${chars.slice(3).join('')}`;
 }
 
 // La nube está lista para sincronizar si hay claves y un código de espacio.

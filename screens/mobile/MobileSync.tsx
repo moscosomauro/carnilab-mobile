@@ -77,7 +77,7 @@ const MobileSync: React.FC<{ onPaired?: () => void }> = ({ onPaired }) => {
               <p className="text-[14px] font-bold text-brand-dark">Conectar por la nube</p>
             </div>
             <p className="text-[11.5px] text-brand-dark/50 mb-3">Poné el <b>mismo código de espacio</b> que en la PC (Ajustes › Nube). Capturás en el campo sin la PC; al prenderla, todo baja al escritorio.</p>
-            <input value={spaceCode} onChange={e => setSpaceCode(e.target.value)} placeholder="código de espacio" className="w-full h-11 rounded-xl bg-app-bg border border-app-border px-3 text-[13px] mb-2 focus:outline-none focus:ring-2 focus:ring-brand-primary/20" />
+            <input value={spaceCode} onChange={e => setSpaceCode(e.target.value.toUpperCase())} placeholder="ej: H7K-M3Q" maxLength={20} className="w-full h-12 rounded-xl bg-app-bg border border-app-border px-3 text-center text-[18px] font-mono tracking-[0.2em] mb-2 focus:outline-none focus:ring-2 focus:ring-brand-primary/20" />
             <button onClick={connectCloud} disabled={cloudBusy} className="w-full flex items-center justify-center gap-2 bg-brand-primary text-white rounded-xl py-3 text-[14px] font-bold shadow-md shadow-brand-primary/20 active:scale-95 transition-all disabled:opacity-60">
               <RefreshCw size={16} className={cloudBusy ? 'animate-spin' : ''} /> {cloudBusy ? 'Conectando…' : 'Conectar'}
             </button>
