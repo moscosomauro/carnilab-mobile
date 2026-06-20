@@ -1,12 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
-import { getLastSync, getPairToken } from '../../db/syncClient';
+import { cloudConfigured, cloudReady, getCloudLastSync, syncCloudNow } from '../../db/syncCloud';
 import { MobileHeader } from '../../components/MobileLayout';
 import { SpeciesIcon } from '../../components/SpeciesIcon';
 import {
-  Droplets, FlaskConical, Scissors, Eye, Bug, Bell, NotebookPen, Leaf, Dna, Bot,
-  Hourglass, Snowflake, Wifi, ChevronRight, Check, Star
+  Droplets, FlaskConical, Scissors, Eye, Bug, Bell, Leaf, Dna, Bot,
+  Hourglass, Snowflake, Cloud, CloudOff, RefreshCw, ChevronRight, Check, Star
 } from 'lucide-react';
 
 const tipoConf: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
@@ -19,7 +19,6 @@ const tipoConf: Record<string, { label: string; icon: React.ReactNode; color: st
 };
 
 const timing = (fecha: string) => {
-  const ms = new Date(fecha).getTime() - Date.now();
   const start = new Date(); start.setHours(0, 0, 0, 0);
   const d = Math.round((new Date(fecha).setHours(0, 0, 0, 0) - start.getTime()) / 86400000);
   if (d < 0) return { label: `Vencido · ${Math.abs(d)} ${Math.abs(d) === 1 ? 'día' : 'días'}`, cls: 'bg-rose-50 text-rose-600' };
@@ -30,14 +29,12 @@ const timing = (fecha: string) => {
 
 const MobileHome: React.FC = () => {
   const navigate = useNavigate();
-  const { plants, crosses, seedBank, alerts } = useApp();
+  const { plants, crosses, seedBank, alerts, fetchData } = useApp();
   const greeting = (() => { const h = new Date().getHours(); return h < 12 ? '¡Buenos días, cultivador! 🌿' : h < 19 ? '¡Buenas tardes, cultivador! 🌿' : '¡Buenas noches, cultivador! 🌿'; })();
 
   const pend = useMemo(() => alerts.filter(a => !a.completada).sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime()), [alerts]);
   const cruzasAct = crosses.filter(c => c.estado === 'en_proceso').length;
   const estrat = seedBank.filter(s => s.estado === 'estratificando').length;
-  const last = getLastSync();
-  const paired = !!getPairToken();
   const plantBy = (n: string) => plants.find(p => p.nombre === n);
 
   const actions = [
@@ -102,20 +99,74 @@ const MobileHome: React.FC = () => {
           </div>
         </div>
 
-        {/* Estado de sincronización */}
+        {/* Sincronización con la nube */}
         <div>
-          <p className="flex items-center gap-2 text-[12px] font-black uppercase tracking-wider text-brand-primary mb-2"><span className="text-[#C9A24B]"><Wifi size={14} /></span> Estado de sincronización</p>
-          <button onClick={() => navigate('/sync')} className="w-full flex items-center gap-3 bg-app-card border border-app-border rounded-xl px-4 py-3">
-            <Wifi size={18} className="text-[#C9A24B] shrink-0" />
-            <div className="flex-1 text-left min-w-0">
-              <p className="text-[12.5px] font-bold text-brand-dark">Última sync: {last ? new Date(last).toLocaleString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'nunca'}</p>
-              <p className="text-[11px] text-brand-dark/45 truncate">CarniLab-Local</p>
-            </div>
-            {paired ? <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-50 rounded-full px-2 py-1 shrink-0"><Check size={12} /> Emparejado</span> : <ChevronRight size={16} className="text-brand-dark/30" />}
-          </button>
+          <p className="flex items-center gap-2 text-[12px] font-black uppercase tracking-wider text-brand-primary mb-2"><span className="text-[#C9A24B]"><Cloud size={14} /></span> Sincronización</p>
+          <SyncCard onManage={() => navigate('/sync')} onSynced={fetchData} />
         </div>
       </div>
     </>
+  );
+};
+
+// Tarjeta de sincronización con la nube: muestra estado, última sync y un botón
+// "Sincronizar ahora" con confirmación visible (lo que pedía faltar en el móvil).
+const SyncCard: React.FC<{ onManage: () => void; onSynced: () => void }> = ({ onManage, onSynced }) => {
+  const [state, setState] = useState<'idle' | 'busy' | 'ok' | 'err'>('idle');
+  const [last, setLast] = useState(getCloudLastSync());
+  const [msg, setMsg] = useState<string | null>(null);
+  const ready = cloudReady();
+
+  const fmt = (t: number) => t ? new Date(t).toLocaleString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'nunca';
+
+  const doSync = async () => {
+    if (!ready || state === 'busy') return;
+    setState('busy'); setMsg(null);
+    const r = await syncCloudNow();
+    if (r.ok) {
+      setLast(getCloudLastSync());
+      setState('ok'); setMsg('Sincronizado con la nube');
+      onSynced();
+      setTimeout(() => setState('idle'), 3500);
+    } else {
+      setState('err'); setMsg(r.error || 'No se pudo sincronizar');
+      setTimeout(() => setState('idle'), 5000);
+    }
+  };
+
+  if (!cloudConfigured) {
+    return (
+      <button onClick={onManage} className="w-full flex items-center gap-3 bg-app-card border border-app-border rounded-xl px-4 py-3">
+        <CloudOff size={18} className="text-brand-dark/40 shrink-0" />
+        <span className="flex-1 text-left text-[12.5px] font-bold text-brand-dark/60">Sincronización por Wi-Fi</span>
+        <ChevronRight size={16} className="text-brand-dark/30" />
+      </button>
+    );
+  }
+
+  return (
+    <div className="bg-app-card border border-app-border rounded-xl overflow-hidden">
+      <button onClick={onManage} className="w-full flex items-center gap-3 px-4 py-3">
+        <Cloud size={18} className={`shrink-0 ${ready ? 'text-emerald-600' : 'text-[#C9A24B]'}`} />
+        <div className="flex-1 text-left min-w-0">
+          <p className="text-[12.5px] font-bold text-brand-dark">{ready ? 'Conectado a la nube' : 'Sin código de espacio'}</p>
+          <p className="text-[11px] text-brand-dark/45 truncate">Última sync: {fmt(last)}</p>
+        </div>
+        {ready
+          ? <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-50 rounded-full px-2 py-1 shrink-0"><Check size={12} /> Activo</span>
+          : <ChevronRight size={16} className="text-brand-dark/30" />}
+      </button>
+      <div className="border-t border-app-border px-3 py-2.5">
+        <button onClick={doSync} disabled={!ready || state === 'busy'}
+          className={`w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-[13px] font-bold transition-all active:scale-95 disabled:opacity-50
+            ${state === 'ok' ? 'bg-emerald-50 text-emerald-700' : state === 'err' ? 'bg-rose-50 text-rose-600' : 'bg-brand-primary text-white'}`}>
+          {state === 'busy' ? <><RefreshCw size={15} className="animate-spin" /> Sincronizando…</>
+            : state === 'ok' ? <><Check size={15} /> {msg}</>
+            : state === 'err' ? <>{msg}</>
+            : <><RefreshCw size={15} /> Sincronizar ahora</>}
+        </button>
+      </div>
+    </div>
   );
 };
 
