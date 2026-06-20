@@ -2,8 +2,9 @@ import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { savePairToken, getPairToken, getLastSync, syncNow } from '../../db/syncClient';
+import { cloudConfigured, getSpaceId, setSpaceId, syncCloudNow } from '../../db/syncCloud';
 import { useApp } from '../../context/AppContext';
-import { ScanLine, Keyboard, Wifi, RefreshCw, Check } from 'lucide-react';
+import { ScanLine, Keyboard, Wifi, RefreshCw, Check, Cloud } from 'lucide-react';
 
 // react-qr-scanner se carga solo al activar la cámara (evita romper el render inicial)
 const QrReader: any = lazy(() => import('react-qr-scanner').then(m => ({ default: (m as any).default })));
@@ -19,6 +20,19 @@ const MobileSync: React.FC<{ onPaired?: () => void }> = ({ onPaired }) => {
   const [ip, setIp] = useState('');
   const [paired, setPaired] = useState(!!getPairToken());
   const [error, setError] = useState<string | null>(null);
+  const [spaceCode, setSpaceCode] = useState(getSpaceId() || '');
+  const [cloudBusy, setCloudBusy] = useState(false);
+
+  const connectCloud = async () => {
+    const code = spaceCode.trim();
+    if (!code) { setError('Poné el mismo código de espacio que usás en la PC.'); return; }
+    setError(null); setCloudBusy(true);
+    setSpaceId(code);
+    const r = await syncCloudNow();
+    setCloudBusy(false);
+    if (r.ok) { fetchData(); onPaired?.(); }
+    else setError(r.error || 'No se pudo conectar con la nube.');
+  };
 
   // Si llegó con ?pairToken (escaneó el QR de la PC), guardar y emparejar
   useEffect(() => {
@@ -50,11 +64,32 @@ const MobileSync: React.FC<{ onPaired?: () => void }> = ({ onPaired }) => {
         <img src={currentLogo} alt="" className="w-11 h-11 object-contain" />
         <div className="flex-1">
           <h1 className="font-accent text-[26px] font-bold text-brand-dark leading-none">Sinc</h1>
-          <p className="text-[12px] text-brand-dark/50 mt-0.5">Escaneá el código QR para sincronizar</p>
+          <p className="text-[12px] text-brand-dark/50 mt-0.5">Conectá por la nube para trabajar sin la PC</p>
         </div>
       </div>
 
       <div className="px-5 space-y-4 flex-1">
+        {/* Conexión por la nube (vía principal: no necesita la PC prendida) */}
+        {cloudConfigured && (
+          <div className="rounded-2xl border border-app-border bg-app-card p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-8 h-8 rounded-xl bg-[#C9A24B]/12 text-[#C9A24B] flex items-center justify-center"><Cloud size={17} /></span>
+              <p className="text-[14px] font-bold text-brand-dark">Conectar por la nube</p>
+            </div>
+            <p className="text-[11.5px] text-brand-dark/50 mb-3">Poné el <b>mismo código de espacio</b> que en la PC (Ajustes › Nube). Capturás en el campo sin la PC; al prenderla, todo baja al escritorio.</p>
+            <input value={spaceCode} onChange={e => setSpaceCode(e.target.value)} placeholder="código de espacio" className="w-full h-11 rounded-xl bg-app-bg border border-app-border px-3 text-[13px] mb-2 focus:outline-none focus:ring-2 focus:ring-brand-primary/20" />
+            <button onClick={connectCloud} disabled={cloudBusy} className="w-full flex items-center justify-center gap-2 bg-brand-primary text-white rounded-xl py-3 text-[14px] font-bold shadow-md shadow-brand-primary/20 active:scale-95 transition-all disabled:opacity-60">
+              <RefreshCw size={16} className={cloudBusy ? 'animate-spin' : ''} /> {cloudBusy ? 'Conectando…' : 'Conectar'}
+            </button>
+          </div>
+        )}
+
+        <div className="flex items-center gap-3 py-1">
+          <div className="flex-1 h-px bg-app-border" />
+          <span className="text-[11px] font-semibold text-brand-dark/35">o por Wi-Fi con la PC</span>
+          <div className="flex-1 h-px bg-app-border" />
+        </div>
+
         {/* Visor de cámara */}
         <div className="relative rounded-2xl overflow-hidden border border-app-border bg-brand-dark/90 aspect-[4/3]">
           {scanning ? (

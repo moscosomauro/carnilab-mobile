@@ -14,6 +14,11 @@ import {
   isElectron, notificationsSupported, notificationPermission,
   requestNotificationPermission, notifyOS
 } from '../utils/notifications';
+import {
+  cloudConfigured, cloudReady, getSpaceId, setSpaceId, generateSpaceId,
+  getCloudLastSync, syncCloudNow
+} from '../db/syncCloud';
+import { Cloud, CloudOff, Copy } from 'lucide-react';
 
 const THEMES: { id: any; label: string; sw: string }[] = [
   { id: 'default', label: 'Default', sw: '#7A1E2C' },
@@ -45,6 +50,35 @@ const ProfileScreen: React.FC = () => {
   };
   const testNotification = () =>
     notifyOS('CarniLab', 'Esto es una notificación de prueba 🌱', 'notif-test');
+
+  // --- Nube (Supabase) ---
+  const [spaceCode, setSpaceCode] = useState(getSpaceId() || '');
+  const [cloudMsg, setCloudMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [cloudBusy, setCloudBusy] = useState(false);
+  const [lastSync, setLastSync] = useState(getCloudLastSync());
+
+  const saveSpace = () => {
+    const clean = spaceCode.trim();
+    if (!clean) return;
+    setSpaceId(clean);
+    setSpaceCode(clean);
+    setCloudMsg({ ok: true, text: 'Código guardado. Usá el MISMO código en la PC y en el iPhone.' });
+  };
+  const genSpace = () => {
+    const id = generateSpaceId();
+    setSpaceCode(id);
+    setSpaceId(id);
+    setCloudMsg({ ok: true, text: 'Código generado. Copialo y ponelo igual en el iPhone.' });
+  };
+  const copySpace = () => { if (spaceCode) navigator.clipboard?.writeText(spaceCode); };
+  const runCloudSync = async () => {
+    setCloudBusy(true); setCloudMsg(null);
+    const r = await syncCloudNow();
+    setCloudBusy(false);
+    setLastSync(getCloudLastSync());
+    setCloudMsg(r.ok ? { ok: true, text: 'Sincronizado con la nube.' } : { ok: false, text: r.error || 'Error al sincronizar.' });
+  };
+  const fmtLast = (t: number) => t ? new Date(t).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'nunca';
 
   const onPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; if (!f || !user) return;
@@ -159,6 +193,46 @@ const ProfileScreen: React.FC = () => {
                 </div>
                 <button onClick={enableNotifications} className="shrink-0 flex items-center gap-1.5 rounded-xl bg-brand-primary text-white px-4 py-2 text-[12.5px] font-bold shadow-md shadow-brand-primary/20 hover:brightness-110"><Bell size={14} /> Activar</button>
               </div>
+            )}
+          </Card>
+
+          {/* Nube (campo ↔ escritorio) */}
+          <Card icon={<Cloud size={15} />} title="Nube · campo ↔ escritorio">
+            {!cloudConfigured ? (
+              <div className="flex items-center gap-2.5">
+                <span className="w-9 h-9 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center"><CloudOff size={17} /></span>
+                <div>
+                  <p className="text-[13.5px] font-bold text-brand-dark">Nube no configurada</p>
+                  <p className="text-[11.5px] text-brand-dark/45">Faltan las claves de Supabase (VITE_SUPABASE_URL / ANON_KEY) en el build.</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="text-[12px] text-brand-dark/55 mb-3">
+                  Usá el <b className="text-brand-dark">mismo código de espacio</b> en la PC y en el iPhone. El teléfono captura en el campo sin la PC; al prender la PC, todo baja al escritorio.
+                </p>
+                <label className="block text-[12px] font-semibold text-brand-dark/55 mb-1.5">Código de espacio</label>
+                <div className="flex gap-2 mb-2">
+                  <input value={spaceCode} onChange={e => setSpaceCode(e.target.value)} placeholder="ej: carni-mi-codigo-secreto" className="flex-1 h-11 rounded-xl bg-app-card border border-app-border px-3 text-[13px] text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-primary/20" />
+                  <button onClick={copySpace} title="Copiar" className="w-11 h-11 shrink-0 rounded-xl border border-app-border flex items-center justify-center text-brand-dark/60 hover:bg-app-bg"><Copy size={16} /></button>
+                </div>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <button onClick={saveSpace} className="rounded-xl bg-brand-primary text-white px-4 py-2 text-[12.5px] font-bold hover:brightness-110">Guardar código</button>
+                  <button onClick={genSpace} className="rounded-xl border border-app-border px-4 py-2 text-[12.5px] font-bold text-brand-dark hover:bg-app-bg">Generar uno nuevo</button>
+                </div>
+                <div className="flex items-center justify-between gap-3 pt-3 border-t border-app-border">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${cloudReady() ? 'bg-emerald-500' : 'bg-amber-400'}`} />
+                    <span className="text-[12px] text-brand-dark/55">{cloudReady() ? 'Listo' : 'Falta el código'} · última sync: {fmtLast(lastSync)}</span>
+                  </div>
+                  <button onClick={runCloudSync} disabled={cloudBusy || !cloudReady()} className="flex items-center gap-1.5 rounded-xl bg-brand-secondary text-white px-4 py-2 text-[12.5px] font-bold hover:brightness-110 disabled:opacity-50">
+                    <RefreshCw size={14} className={cloudBusy ? 'animate-spin' : ''} /> Sincronizar ahora
+                  </button>
+                </div>
+                {cloudMsg && (
+                  <p className={`mt-2 text-[12px] font-semibold ${cloudMsg.ok ? 'text-emerald-600' : 'text-rose-500'}`}>{cloudMsg.text}</p>
+                )}
+              </>
             )}
           </Card>
 

@@ -70,3 +70,7 @@ Thumbs.db
 
 # Backup local de datos de la nube (Fase 0)
 cloud_backup/
+
+# Supabase CLI temp
+supabase/.temp/
+supabase/.branches/

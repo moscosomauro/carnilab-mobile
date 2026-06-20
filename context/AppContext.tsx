@@ -7,6 +7,7 @@ import { objectiveEvents } from '../utils/dailyObjectives';
 import { loadTable, saveTable, migrateFromLocalStorage, addTombstone, TableKey } from '../db/localDb';
 import { stamp } from '../db/sync';
 import { syncNow, isPaired } from '../db/syncClient';
+import { syncCloudNow, cloudReady } from '../db/syncCloud';
 import { notifyOS } from '../utils/notifications';
 
 // ============================================================
@@ -163,6 +164,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     run();
     const iv = setInterval(run, 45000);
     return () => { cancelled = true; clearInterval(iv); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  // Auto-sync por la nube (Supabase): al abrir, al recuperar internet y cada 60s
+  // si hay código de espacio configurado. Es lo que permite capturar en el campo
+  // con el iPhone sin la PC y que el escritorio baje todo al prender la PC.
+  useEffect(() => {
+    if (!user?.isAuthenticated) return;
+    let cancelled = false;
+    const run = async () => {
+      if (!cloudReady() || !navigator.onLine) return;
+      const r = await syncCloudNow();
+      if (r.ok && !cancelled) await loadFromLocal();
+    };
+    run();
+    const iv = setInterval(run, 60000);
+    window.addEventListener('online', run);
+    return () => { cancelled = true; clearInterval(iv); window.removeEventListener('online', run); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 

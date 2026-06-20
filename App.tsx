@@ -40,6 +40,7 @@ import { DesktopLayout } from './components/DesktopLayout';
 import { MobileLayout } from './components/MobileLayout';
 import { useIsMobile } from './utils/useIsMobile';
 import { isPaired } from './db/syncClient';
+import { cloudReady } from './db/syncCloud';
 import { useState } from 'react';
 import { ThemeParticles } from './components/ThemeParticles';
 import { ThemeDecorations } from './components/ThemeDecorations';
@@ -163,10 +164,11 @@ const MobileRoutes: React.FC = () => (
   </Suspense>
 );
 
-// App móvil: arranca obligando a emparejar por QR; ya emparejada, muestra
-// el armazón con barra inferior.
+// App móvil: arranca pidiendo conexión (nube o Wi-Fi). Conectada por el código
+// de espacio de la nube, ya no necesita la PC prendida. Luego muestra el
+// armazón con barra inferior.
 const MobileApp: React.FC = () => {
-  const [paired, setPaired] = useState(isPaired());
+  const [paired, setPaired] = useState(isPaired() || cloudReady());
   if (!paired) {
     return (
       <Suspense fallback={<PageLoader />}>
