@@ -4,33 +4,11 @@ import { useApp } from '../../context/AppContext';
 import { MobileHeader } from '../../components/MobileLayout';
 import { SpeciesIcon } from '../../components/SpeciesIcon';
 import { Cross } from '../../types';
+import { polStatus, statusConf, isToday, fmtDay } from '../../utils/pollination';
 import {
   CalendarClock, CheckCircle2, Hourglass, Plus, FlaskConical, History,
   Check, Dna, Sprout
 } from 'lucide-react';
-
-type PolStatus = 'programada' | 'pendiente' | 'hecha' | 'vencida';
-
-// Estado de polinización mostrado: usa el campo nuevo y, si no, deduce del legado.
-const polStatus = (c: Cross): PolStatus => {
-  if (c.estado_polinizacion) {
-    if (c.estado_polinizacion !== 'hecha' && c.fecha_programada &&
-        new Date(c.fecha_programada).setHours(23, 59, 59, 999) < Date.now()) return 'vencida';
-    return c.estado_polinizacion;
-  }
-  if (c.estado === 'completada') return 'hecha';
-  return 'pendiente';
-};
-
-const statusConf: Record<PolStatus, { label: string; cls: string }> = {
-  programada: { label: 'Programada', cls: 'bg-[#C9A24B]/15 text-[#9a7b2f]' },
-  pendiente: { label: 'Pendiente', cls: 'bg-amber-50 text-amber-600' },
-  hecha: { label: 'Hecha', cls: 'bg-brand-primary/10 text-brand-primary' },
-  vencida: { label: 'Vencida', cls: 'bg-rose-50 text-rose-600' },
-};
-
-const isToday = (d?: string) => !!d && new Date(d).toDateString() === new Date().toDateString();
-const fmtDay = (d?: string) => d ? new Date(d).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }) : '—';
 
 const MobilePollinationList: React.FC = () => {
   const navigate = useNavigate();
@@ -103,8 +81,8 @@ const MobilePollinationList: React.FC = () => {
           {list.map(({ c, st }) => {
             const sc = statusConf[st];
             return (
-              <div key={c.id}
-                className="w-full flex items-center gap-3 bg-app-card border border-app-border rounded-xl p-2.5 text-left">
+              <div key={c.id} onClick={() => navigate(`/crosses/${c.id}`)}
+                className="w-full flex items-center gap-3 bg-app-card border border-app-border rounded-xl p-2.5 text-left active:scale-[0.99] transition-transform">
                 <button onClick={e => toggleDone(c, e)}
                   className={`w-6 h-6 rounded-md border-2 shrink-0 flex items-center justify-center transition-colors ${st === 'hecha' ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-app-border text-transparent'}`}>
                   <Check size={14} />
@@ -130,9 +108,16 @@ const MobilePollinationList: React.FC = () => {
           <p className="text-[12px] font-black uppercase tracking-wider text-brand-primary mb-2">Acciones rápidas</p>
           <div className="grid grid-cols-3 gap-2.5">
             <QuickAction icon={<Plus size={20} />} label="Nueva cruza" color="#10B981" onClick={() => navigate('/crosses/new')} />
-            <QuickAction icon={<FlaskConical size={20} />} label="Registrar polinización" color="#A8323E" soon />
-            <QuickAction icon={<History size={20} />} label="Ver historial" color="#9a7b2f" soon />
+            <QuickAction icon={<FlaskConical size={20} />} label="Registrar polinización" color="#A8323E" onClick={() => {
+              const next = list.find(x => x.st !== 'hecha') || withStatus.find(x => x.st !== 'hecha');
+              if (next) navigate(`/crosses/${next.c.id}/pollinate`);
+              else alert('No hay cruzas pendientes para polinizar. Creá una con “Nueva cruza”.');
+            }} />
+            <QuickAction icon={<History size={20} />} label="Ver historial" color="#9a7b2f" onClick={() => navigate('/crosses/history')} />
           </div>
+          <button onClick={() => navigate('/crosses/capsules')} className="w-full mt-2.5 flex items-center justify-center gap-2 bg-app-card border border-app-border rounded-xl py-2.5 text-[13px] font-bold text-brand-dark active:scale-95 transition-all">
+            <Sprout size={16} className="text-emerald-600" /> Seguimiento de cápsulas
+          </button>
         </div>
 
         {/* Botón principal */}

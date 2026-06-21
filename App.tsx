@@ -34,6 +34,10 @@ const MobileCarniBot = lazy(() => import('./screens/mobile/MobileCarniBot'));
 const MobileSync = lazy(() => import('./screens/mobile/MobileSync'));
 const MobilePollinationList = lazy(() => import('./screens/mobile/MobilePollinationList'));
 const MobileCrossNew = lazy(() => import('./screens/mobile/MobileCrossNew'));
+const MobileCrossDetail = lazy(() => import('./screens/mobile/MobileCrossDetail'));
+const MobilePollinationRecord = lazy(() => import('./screens/mobile/MobilePollinationRecord'));
+const MobileCapsules = lazy(() => import('./screens/mobile/MobileCapsules'));
+const MobileCrossHistory = lazy(() => import('./screens/mobile/MobileCrossHistory'));
 
 // Non-lazy components (always needed)
 import { NotificationToast } from './components/NotificationToast';
@@ -157,6 +161,11 @@ const MobileRoutes: React.FC = () => (
       <Route path="/add" element={<MobileAddPlant />} />
       <Route path="/crosses" element={<MobilePollinationList />} />
       <Route path="/crosses/new" element={<MobileCrossNew />} />
+      <Route path="/crosses/capsules" element={<MobileCapsules />} />
+      <Route path="/crosses/history" element={<MobileCrossHistory />} />
+      <Route path="/crosses/:id" element={<MobileCrossDetail />} />
+      <Route path="/crosses/:id/edit" element={<MobileCrossNew />} />
+      <Route path="/crosses/:id/pollinate" element={<MobilePollinationRecord />} />
       <Route path="/seed-bank" element={<MobileSeedBank />} />
       <Route path="/ai" element={<MobileCarniBot />} />
       <Route path="/alerts" element={<Alerts />} />

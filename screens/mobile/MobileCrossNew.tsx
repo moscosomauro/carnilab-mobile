@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { MobileHeader } from '../../components/MobileLayout';
 import { SpeciesIcon } from '../../components/SpeciesIcon';
@@ -16,20 +16,24 @@ const firstWord = (s: string) => s.split(' ')[0];
 
 const MobileCrossNew: React.FC = () => {
   const navigate = useNavigate();
-  const { plants, addCross, addAlert } = useApp();
+  const { id } = useParams();
+  const { plants, crosses, addCross, updateCross, addAlert } = useApp();
 
-  const [madreId, setMadreId] = useState('');
-  const [padreId, setPadreId] = useState('');
-  const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
-  const [hora, setHora] = useState('11:00');
-  const [ubicacion, setUbicacion] = useState('');
-  const [extraId, setExtraId] = useState('');
-  const [objetivo, setObjetivo] = useState('');
-  const [notas, setNotas] = useState('');
-  const [fuentePolen, setFuentePolen] = useState('');
-  const [etiqueta, setEtiqueta] = useState('');
-  const [prioridad, setPrioridad] = useState<'baja' | 'media' | 'alta'>('media');
-  const [recordatorio, setRecordatorio] = useState(true);
+  const editing = id ? crosses.find(c => c.id === Number(id)) : undefined;
+  const idByName = (n?: string) => plants.find(p => p.nombre === n)?.id?.toString() || '';
+
+  const [madreId, setMadreId] = useState(editing ? idByName(editing.madre_nombre) : '');
+  const [padreId, setPadreId] = useState(editing ? idByName(editing.padre_nombre) : '');
+  const [fecha, setFecha] = useState((editing?.fecha_programada || editing?.fecha_cruza || new Date().toISOString()).split('T')[0]);
+  const [hora, setHora] = useState(editing?.hora_programada || '11:00');
+  const [ubicacion, setUbicacion] = useState(editing?.ubicacion || '');
+  const [extraId, setExtraId] = useState(editing?.padres_extra?.[0] ? idByName(editing.padres_extra[0].nombre) : '');
+  const [objetivo, setObjetivo] = useState(editing?.objetivo || '');
+  const [notas, setNotas] = useState(editing?.notas || '');
+  const [fuentePolen, setFuentePolen] = useState(editing?.fuente_polen || '');
+  const [etiqueta, setEtiqueta] = useState(editing?.etiqueta || '');
+  const [prioridad, setPrioridad] = useState<'baja' | 'media' | 'alta'>(editing?.prioridad || 'media');
+  const [recordatorio, setRecordatorio] = useState(editing?.recordatorio ?? true);
   const [saving, setSaving] = useState(false);
 
   const madre = plants.find(p => p.id === Number(madreId));
@@ -69,6 +73,16 @@ const MobileCrossNew: React.FC = () => {
     if (!v.success) { alert('❌ ' + (v.errors?.join('\n') || 'Datos inválidos')); return; }
     setSaving(true);
     try {
+      if (editing) {
+        // Edición: preserva estado/cápsula/semillas; actualiza la planificación
+        await updateCross({
+          ...editing, ...v.data!,
+          estado_polinizacion: editing.estado_polinizacion || 'programada',
+          madre_imagen: madre.imagen, padre_imagen: padre.imagen,
+        } as any);
+        navigate(`/crosses/${editing.id}`);
+        return;
+      }
       const r = await addCross({
         ...v.data!,
         madre_imagen: madre.imagen, padre_imagen: padre.imagen,
@@ -89,7 +103,7 @@ const MobileCrossNew: React.FC = () => {
 
   return (
     <>
-      <MobileHeader title="Nueva cruza" subtitle="Planificar polinización" back />
+      <MobileHeader title={editing ? 'Editar cruza' : 'Nueva cruza'} subtitle="Planificar polinización" back />
       <div className="px-5 space-y-4 pb-28">
         {/* Madre / Padre */}
         <PlantPicker icon={<Venus size={15} className="text-rose-400" />} label="Planta madre" plants={ordered} value={madreId} onChange={setMadreId} selected={madre} />
@@ -154,7 +168,7 @@ const MobileCrossNew: React.FC = () => {
 
         <button onClick={save} disabled={saving || !madre || !padre}
           className="w-full flex items-center justify-center gap-2 bg-brand-primary text-white rounded-xl py-3.5 text-[15px] font-bold shadow-md shadow-brand-primary/20 active:scale-95 transition-all disabled:opacity-50">
-          <Dna size={18} /> {saving ? 'Guardando…' : 'Guardar cruza'}
+          <Dna size={18} /> {saving ? 'Guardando…' : editing ? 'Guardar cambios' : 'Guardar cruza'}
         </button>
       </div>
     </>
