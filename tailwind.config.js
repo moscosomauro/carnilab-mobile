@@ -69,6 +69,10 @@ export default {
           '0%': { top: '0%' },
           '100%': { top: '100%' },
         },
+        'slide-up': {
+          '0%': { opacity: '0', transform: 'translateY(100%)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
         'progress-indeterminate': {
           '0%': { width: '0%', marginLeft: '0%' },
           '50%': { width: '50%', marginLeft: '25%' },
@@ -82,6 +86,7 @@ export default {
         'fade-in': 'fade-in 0.3s ease-out forwards',
         'scale-in': 'scale-in 0.3s ease-out forwards',
         'scan': 'scan 3s linear infinite',
+        'slide-up': 'slide-up 0.25s ease-out forwards',
         'progress-indeterminate': 'progress-indeterminate 2s ease-in-out infinite',
         'spin-slow': 'spin 10s linear infinite',
       },

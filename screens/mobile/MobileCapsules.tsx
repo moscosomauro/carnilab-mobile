@@ -1,15 +1,20 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { MobileHeader } from '../../components/MobileLayout';
 import { SpeciesIcon } from '../../components/SpeciesIcon';
 import { Cross } from '../../types';
 import { polStatus, progresoCapsula, capsulaMadura, fmtDayLong, fw, ETAPAS_CAPSULA } from '../../utils/pollination';
-import { Sprout, Scissors, Database, CheckCircle2, Leaf } from 'lucide-react';
+import { Sprout, Scissors, Database, CheckCircle2, Leaf, X, Minus, Plus } from 'lucide-react';
 
 const MobileCapsules: React.FC = () => {
   const navigate = useNavigate();
   const { crosses, updateCross, addSeedBatch } = useApp();
+
+  const [modal, setModal] = useState<Cross | null>(null);   // cruza a cosechar
+  const [cant, setCant] = useState(0);                       // semillas en el modal
+  const [busy, setBusy] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   // Cápsulas: cruzas ya polinizadas (hechas) con seguimiento.
   const capsulas = useMemo(
@@ -26,32 +31,48 @@ const MobileCapsules: React.FC = () => {
     };
   }, [capsulas]);
 
-  const registrarCosecha = async (c: Cross, e: React.MouseEvent) => {
+  const flash = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2800); };
+
+  const abrirCosecha = (c: Cross, e: React.MouseEvent) => {
     e.stopPropagation();
-    const def = c.semillas_estimadas || c.semillas_obtenidas || 0;
-    const n = window.prompt(`Semillas cosechadas de ${fw(c.madre_nombre)} × ${fw(c.padre_nombre)}:`, String(def));
-    if (n === null) return;
-    const cant = Math.max(0, parseInt(n, 10) || 0);
-    await updateCross({ ...c, capsula_estado: 'cosechada', semillas_obtenidas: cant, estado: 'completada' } as Cross);
+    setCant(c.semillas_estimadas || c.semillas_obtenidas || 0);
+    setModal(c);
   };
 
-  const transferirBanco = async (c: Cross, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const cant = c.semillas_obtenidas || c.semillas_estimadas || 0;
-    const ok = await addSeedBatch({
+  // Guarda la cosecha; opcionalmente crea el lote en el banco de semillas.
+  const cosechar = async (alBanco: boolean) => {
+    if (!modal || busy) return;
+    setBusy(true);
+    try {
+      await updateCross({ ...modal, capsula_estado: 'cosechada', semillas_obtenidas: cant, estado: 'completada' } as Cross);
+      if (alBanco) await crearLote(modal, cant);
+      setModal(null);
+      flash(alBanco ? `Cosechada y enviada al banco (${cant} semillas)` : `Cosecha registrada (${cant} semillas)`);
+    } finally { setBusy(false); }
+  };
+
+  const crearLote = async (c: Cross, cantidad: number) => {
+    await addSeedBatch({
       nombre: `${fw(c.madre_nombre)} × ${fw(c.padre_nombre)}`,
       especie: c.madre_especie,
-      cantidad: cant,
+      cantidad,
       fecha_ingreso: new Date().toISOString(),
       origen: 'propia',
       cross_id: c.id,
       estado: 'almacenada',
       notas: `Cosecha de la cruza ${c.nombre}`,
     } as any);
-    if (ok) {
-      await updateCross({ ...c, capsula_estado: 'cosechada' } as Cross);
-      if (confirm('Lote agregado al banco de semillas. ¿Ir al banco?')) navigate('/seed-bank');
-    }
+  };
+
+  // Para cápsulas ya cosechadas: transferir directo al banco (sin diálogo nativo).
+  const transferirDirecto = async (c: Cross, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (busy) return;
+    setBusy(true);
+    try {
+      await crearLote(c, c.semillas_obtenidas || c.semillas_estimadas || 0);
+      flash('Lote agregado al banco de semillas');
+    } finally { setBusy(false); }
   };
 
   return (
@@ -115,20 +136,52 @@ const MobileCapsules: React.FC = () => {
                 </>
               )}
 
-              {/* Acciones cuando está madura */}
+              {/* Acción cuando está madura */}
               {madura && (
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  <button onClick={e => registrarCosecha(c, e)} className="flex items-center justify-center gap-1.5 bg-brand-primary text-white rounded-lg py-2.5 text-[12.5px] font-bold active:scale-95"><Scissors size={14} /> Registrar cosecha</button>
-                  <button onClick={e => transferirBanco(c, e)} className="flex items-center justify-center gap-1.5 border border-app-border text-brand-dark rounded-lg py-2.5 text-[12.5px] font-bold active:scale-95"><Database size={14} /> Al banco</button>
-                </div>
+                <button onClick={e => abrirCosecha(c, e)} className="w-full flex items-center justify-center gap-1.5 bg-brand-primary text-white rounded-lg py-2.5 text-[12.5px] font-bold active:scale-95"><Scissors size={14} /> Registrar cosecha</button>
               )}
               {cosechada && (
-                <button onClick={e => transferirBanco(c, e)} className="w-full flex items-center justify-center gap-1.5 border border-app-border text-brand-dark rounded-lg py-2.5 text-[12.5px] font-bold active:scale-95"><Database size={14} /> Transferir al banco ({c.semillas_obtenidas || 0} semillas)</button>
+                <button onClick={e => transferirDirecto(c, e)} disabled={busy} className="w-full flex items-center justify-center gap-1.5 border border-app-border text-brand-dark rounded-lg py-2.5 text-[12.5px] font-bold active:scale-95 disabled:opacity-50"><Database size={14} /> Transferir al banco ({c.semillas_obtenidas || 0} semillas)</button>
               )}
             </div>
           );
         })}
       </div>
+
+      {/* Toast de confirmación */}
+      {toast && (
+        <div className="fixed left-1/2 -translate-x-1/2 bottom-24 z-[120] bg-brand-dark text-white text-[12.5px] font-semibold rounded-full px-4 py-2.5 shadow-lg flex items-center gap-2 animate-scale-in">
+          <CheckCircle2 size={15} className="text-emerald-400" /> {toast}
+        </div>
+      )}
+
+      {/* Modal de cosecha */}
+      {modal && (
+        <div className="fixed inset-0 z-[110] bg-brand-dark/40 backdrop-blur-sm flex items-end" onClick={() => !busy && setModal(null)}>
+          <div className="w-full bg-app-card rounded-t-3xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] animate-slide-up" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="font-accent text-[20px] font-bold text-brand-dark">Registrar cosecha</h2>
+              <button onClick={() => !busy && setModal(null)} className="w-8 h-8 rounded-lg hover:bg-app-bg flex items-center justify-center text-brand-dark/50"><X size={18} /></button>
+            </div>
+            <p className="text-[12.5px] text-brand-dark/55 mb-4">{fw(modal.madre_nombre)} × {fw(modal.padre_nombre)}</p>
+
+            <p className="text-[12px] font-semibold text-brand-dark/55 mb-1.5">Semillas obtenidas</p>
+            <div className="flex items-center gap-3 mb-5">
+              <button onClick={() => setCant(n => Math.max(0, n - 10))} className="w-11 h-11 rounded-xl border border-app-border flex items-center justify-center text-brand-dark/60 active:scale-95"><Minus size={18} /></button>
+              <input type="number" value={cant} onChange={e => setCant(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                className="flex-1 h-12 rounded-xl bg-app-bg border border-app-border text-center text-[20px] font-black text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-primary/20" />
+              <button onClick={() => setCant(n => n + 10)} className="w-11 h-11 rounded-xl border border-app-border flex items-center justify-center text-brand-dark/60 active:scale-95"><Plus size={18} /></button>
+            </div>
+
+            <button onClick={() => cosechar(true)} disabled={busy} className="w-full flex items-center justify-center gap-2 bg-brand-primary text-white rounded-xl py-3.5 text-[14.5px] font-bold shadow-md shadow-brand-primary/20 active:scale-95 transition-all disabled:opacity-50 mb-2">
+              <Database size={17} /> {busy ? 'Guardando…' : 'Cosechar y enviar al banco'}
+            </button>
+            <button onClick={() => cosechar(false)} disabled={busy} className="w-full flex items-center justify-center gap-2 border border-app-border text-brand-dark rounded-xl py-3 text-[13.5px] font-bold active:scale-95 transition-all disabled:opacity-50">
+              <Scissors size={15} /> Solo registrar cosecha
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 };
