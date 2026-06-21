@@ -178,6 +178,32 @@ export const CrossSchema = z.object({
     .trim()
     .optional()
     .or(z.literal('')),
+
+  // === Gestión de polinización (móvil 2026) — todo opcional ===
+  estado_polinizacion: z.enum(['programada', 'pendiente', 'hecha', 'vencida']).optional(),
+  fecha_programada: z.string().optional().or(z.literal('')),
+  hora_programada: z.string().max(10).optional().or(z.literal('')),
+  ubicacion: z.string().max(120).trim().optional().or(z.literal('')),
+  prioridad: z.enum(['baja', 'media', 'alta']).optional(),
+  recordatorio: z.boolean().optional(),
+  fuente_polen: z.string().max(150).trim().optional().or(z.literal('')),
+  etiqueta: z.string().max(40).trim().optional().or(z.literal('')),
+  fecha_polinizacion: z.string().optional().or(z.literal('')),
+  hora_polinizacion: z.string().max(10).optional().or(z.literal('')),
+  checklist: z.object({
+    polen_aplicado: z.boolean().optional(),
+    estigma_receptivo: z.boolean().optional(),
+    pincel_limpio: z.boolean().optional(),
+    etiqueta_colocada: z.boolean().optional(),
+    aislamiento_aplicado: z.boolean().optional(),
+  }).optional(),
+  temp: z.number().min(-20).max(60).optional().nullable(),
+  humedad: z.number().min(0).max(100).optional().nullable(),
+  expectativa_capsula: z.string().max(150).trim().optional().or(z.literal('')),
+  capsula_estado: z.enum(['desarrollo', 'maduro', 'cosechada']).optional(),
+  cosecha_estimada: z.string().optional().or(z.literal('')),
+  semillas_estimadas: z.number().int().min(0).max(100000).optional().nullable(),
+  fotos: z.array(z.string()).max(20).optional(),
 });
 
 export type CrossInput = z.infer<typeof CrossSchema>;

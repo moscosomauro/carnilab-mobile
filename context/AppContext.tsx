@@ -304,6 +304,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         hibrido_imagen: (cross as any).hibrido_imagen || null,
       };
 
+      // Gestión de polinización (móvil 2026): conservar campos nuevos si vienen
+      const polFields = [
+        'estado_polinizacion', 'fecha_programada', 'hora_programada', 'ubicacion',
+        'prioridad', 'recordatorio', 'fuente_polen', 'etiqueta',
+        'fecha_polinizacion', 'hora_polinizacion', 'checklist', 'temp', 'humedad',
+        'expectativa_capsula', 'capsula_estado', 'cosecha_estimada', 'semillas_estimadas', 'fotos',
+      ] as const;
+      for (const f of polFields) {
+        if ((cross as any)[f] !== undefined) cleanCross[f] = (cross as any)[f];
+      }
+
       const id = tempId ?? makeTempId();
 
       const stampedCross = stamp({ ...cleanCross, id, isSyncing: false });

@@ -29,10 +29,11 @@ const MobileHome = lazy(() => import('./screens/mobile/MobileHome'));
 const MobilePlants = lazy(() => import('./screens/mobile/MobilePlants'));
 const MobileDiary = lazy(() => import('./screens/mobile/MobileDiary'));
 const MobileAddPlant = lazy(() => import('./screens/mobile/MobileAddPlant'));
-const MobileCrosses = lazy(() => import('./screens/mobile/MobileCrosses'));
 const MobileSeedBank = lazy(() => import('./screens/mobile/MobileSeedBank'));
 const MobileCarniBot = lazy(() => import('./screens/mobile/MobileCarniBot'));
 const MobileSync = lazy(() => import('./screens/mobile/MobileSync'));
+const MobilePollinationList = lazy(() => import('./screens/mobile/MobilePollinationList'));
+const MobileCrossNew = lazy(() => import('./screens/mobile/MobileCrossNew'));
 
 // Non-lazy components (always needed)
 import { NotificationToast } from './components/NotificationToast';
@@ -154,7 +155,8 @@ const MobileRoutes: React.FC = () => (
       <Route path="/plants" element={<MobilePlants />} />
       <Route path="/plant/:id" element={<PlantDetails />} />
       <Route path="/add" element={<MobileAddPlant />} />
-      <Route path="/crosses" element={<MobileCrosses />} />
+      <Route path="/crosses" element={<MobilePollinationList />} />
+      <Route path="/crosses/new" element={<MobileCrossNew />} />
       <Route path="/seed-bank" element={<MobileSeedBank />} />
       <Route path="/ai" element={<MobileCarniBot />} />
       <Route path="/alerts" element={<Alerts />} />

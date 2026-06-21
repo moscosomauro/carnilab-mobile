@@ -60,6 +60,38 @@ export interface Cross {
   hibrido_imagen?: string | null; // Nuevo: Foto del híbrido resultante
   isSyncing?: boolean; // Propiedad para UI optimista
   errorMessage?: string; // Nuevo: Detalle del error si falla
+
+  // === Gestión de polinización (móvil 2026) — todo opcional, no rompe escritorio ===
+  // Estado del ciclo de polinización (más rico que `estado`).
+  estado_polinizacion?: 'programada' | 'pendiente' | 'hecha' | 'vencida';
+  // Planificación
+  fecha_programada?: string;        // día planificado para polinizar
+  hora_programada?: string;         // "11:00"
+  ubicacion?: string;               // invernadero / área
+  prioridad?: 'baja' | 'media' | 'alta';
+  recordatorio?: boolean;           // avisar el día programado
+  fuente_polen?: string;            // de dónde sale el polen
+  etiqueta?: string;                // código/etiqueta (ej. "S8-001")
+  // Registro del evento de polinización
+  fecha_polinizacion?: string;
+  hora_polinizacion?: string;
+  checklist?: PollinationChecklist;
+  temp?: number | null;             // °C al polinizar
+  humedad?: number | null;          // % al polinizar
+  expectativa_capsula?: string;
+  // Seguimiento de cápsula / cosecha
+  capsula_estado?: 'desarrollo' | 'maduro' | 'cosechada';
+  cosecha_estimada?: string;        // fecha estimada de cosecha
+  semillas_estimadas?: number | null;
+  fotos?: string[];                 // fotos vinculadas a la cruza
+}
+
+export interface PollinationChecklist {
+  polen_aplicado?: boolean;
+  estigma_receptivo?: boolean;
+  pincel_limpio?: boolean;
+  etiqueta_colocada?: boolean;
+  aislamiento_aplicado?: boolean;
 }
 
 export interface Alert {
