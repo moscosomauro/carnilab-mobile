@@ -2,12 +2,13 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useApp } from '../context/AppContext';
-import { Home, NotebookPen, Leaf, Sprout, Bot, Bell } from 'lucide-react';
+import { Home, NotebookPen, Leaf, Sprout, Bot, Bell, Dna } from 'lucide-react';
 
 const TABS = [
   { name: 'Inicio', icon: Home, path: '/dashboard' },
   { name: 'Bitácora', icon: NotebookPen, path: '/diary' },
   { name: 'Plantas', icon: Leaf, path: '/plants' },
+  { name: 'Cruzas', icon: Dna, path: '/crosses' },
   { name: 'Semillas', icon: Sprout, path: '/seed-bank' },
   { name: 'CarniBot', icon: Bot, path: '/ai' },
 ];

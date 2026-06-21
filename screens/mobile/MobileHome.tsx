@@ -40,7 +40,7 @@ const MobileHome: React.FC = () => {
   const actions = [
     { label: 'Nueva entrada', icon: <Droplets size={20} />, color: '#3B82F6', to: '/diary' },
     { label: 'Agregar planta', icon: <Leaf size={20} />, color: '#10B981', to: '/add' },
-    { label: 'Registrar cruza', icon: <Dna size={20} />, color: '#A8323E', to: '/crosses' },
+    { label: 'Polinización', icon: <Dna size={20} />, color: '#A8323E', to: '/crosses' },
     { label: 'CarniBot', icon: <Bot size={20} />, color: '#8B5CF6', to: '/ai' },
   ];
 
