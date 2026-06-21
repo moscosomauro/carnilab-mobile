@@ -5,9 +5,11 @@ import { Cross, ExtraParent } from '../types';
 import { CrossSchema, validateData } from '../utils/validationSchemas';
 import { AssetIcon } from '../components/AssetIcon';
 import { SpeciesIcon } from '../components/SpeciesIcon';
+import { polStatus, statusConf, progresoCapsula, fmtDayLong } from '../utils/pollination';
 import {
-  Plus, X, ChevronDown, Venus, Mars, Dna, Network, Table2, Star, Calendar,
-  Target, Sprout, Trash2, Pencil, PackagePlus, Award, GitBranch, Check, Flower2
+  Plus, X, ChevronDown, Venus, Mars, Dna, Network, Table2, Calendar,
+  Target, Trash2, Pencil, PackagePlus, Award, GitBranch, Check, Flower2,
+  CheckCircle2, Circle, FlaskRound, MapPin, Tag, Flag
 } from 'lucide-react';
 
 const OBJETIVOS = ['Mejorar coloración', 'Aumentar tamaño', 'Vigor híbrido', 'Resistencia', 'Nueva variedad', 'Otro'];
@@ -21,6 +23,8 @@ const estadoMeta: Record<string, { label: string; dot: string; text: string; bg:
 const fmtDate = (f: string) => new Date(f).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 const mmYYYY = (f: string) => { const d = new Date(f); return `${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`; };
 const tasaGerm = (c: Cross) => c.semillas_obtenidas > 0 ? Math.round((c.plantas_germinadas / c.semillas_obtenidas) * 100) : 0;
+// ¿La cruza tiene datos del ciclo de polinización (capturados en el móvil)?
+const hasPol = (c: Cross) => !!(c.estado_polinizacion || c.fecha_programada || c.capsula_estado);
 
 const CrossesScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -260,7 +264,9 @@ const CrossesScreen: React.FC = () => {
                         <td className="px-3 py-2.5 text-[12px] text-brand-dark/55 hidden md:table-cell">{c.padre_nombre}</td>
                         <td className="px-3 py-2.5 text-[12px] text-brand-dark/70">{c.semillas_obtenidas}</td>
                         <td className="px-3 py-2.5 text-[12px] text-brand-dark/70">{c.plantas_germinadas} <span className="text-brand-dark/35">({tasaGerm(c)}%)</span></td>
-                        <td className="px-3 py-2.5"><span className={`inline-flex items-center gap-1.5 text-[11.5px] font-semibold ${estadoMeta[c.estado].text}`}><span className={`w-1.5 h-1.5 rounded-full ${estadoMeta[c.estado].dot}`} /> {estadoMeta[c.estado].label}</span></td>
+                        <td className="px-3 py-2.5">{hasPol(c)
+                          ? <PolBadge c={c} />
+                          : <span className={`inline-flex items-center gap-1.5 text-[11.5px] font-semibold ${estadoMeta[c.estado].text}`}><span className={`w-1.5 h-1.5 rounded-full ${estadoMeta[c.estado].dot}`} /> {estadoMeta[c.estado].label}</span>}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -277,7 +283,9 @@ const CrossesScreen: React.FC = () => {
                   <h3 className="font-accent text-[20px] font-bold text-brand-dark">{selected.nombre}</h3>
                   <p className="text-[12px] text-brand-dark/45">Iniciada el {fmtDate(selected.fecha_cruza)}{selected.objetivo && ` · ${selected.objetivo}`}</p>
                 </div>
-                <span className={`inline-flex items-center gap-1.5 text-[12px] font-semibold rounded-full px-3 py-1 ${estadoMeta[selected.estado].bg} ${estadoMeta[selected.estado].text}`}><span className={`w-1.5 h-1.5 rounded-full ${estadoMeta[selected.estado].dot}`} /> {estadoMeta[selected.estado].label}</span>
+                {hasPol(selected)
+                  ? <PolBadge c={selected} big />
+                  : <span className={`inline-flex items-center gap-1.5 text-[12px] font-semibold rounded-full px-3 py-1 ${estadoMeta[selected.estado].bg} ${estadoMeta[selected.estado].text}`}><span className={`w-1.5 h-1.5 rounded-full ${estadoMeta[selected.estado].dot}`} /> {estadoMeta[selected.estado].label}</span>}
               </div>
 
               {editing && editData ? (
@@ -300,6 +308,7 @@ const CrossesScreen: React.FC = () => {
                     <Metric value={`${tasaGerm(selected)}%`} label="Tasa" />
                     <Metric value={Math.floor((Date.now() - new Date(selected.fecha_cruza).getTime()) / 86400000)} label="Días" />
                   </div>
+                  {hasPol(selected) && <PolPanel c={selected} />}
                   {selected.notas && <p className="text-[12.5px] text-brand-dark/60 italic bg-app-bg/50 border border-app-border rounded-xl p-3 mb-4">"{selected.notas}"</p>}
                   <div className="flex flex-wrap gap-2">
                     <button onClick={startEdit} className="flex items-center gap-1.5 rounded-lg bg-app-card border border-app-border px-3 py-2 text-[12.5px] font-bold text-brand-dark hover:bg-app-bg"><Pencil size={14} /> Editar resultados</button>
@@ -361,5 +370,72 @@ const Metric: React.FC<{ value: React.ReactNode; label: string }> = ({ value, la
     <p className="text-[10.5px] text-brand-dark/45 mt-1">{label}</p>
   </div>
 );
+
+// Badge del estado de polinización (Programada/Pendiente/Hecha/Vencida)
+const PolBadge: React.FC<{ c: Cross; big?: boolean }> = ({ c, big }) => {
+  const sc = statusConf[polStatus(c)];
+  return <span className={`inline-flex items-center font-bold rounded-full ${sc.cls} ${big ? 'text-[12px] px-3 py-1' : 'text-[11px] px-2.5 py-0.5'}`}>{sc.label}</span>;
+};
+
+// Ciclo de polinización capturado en el móvil, reflejado en el escritorio.
+const PolPanel: React.FC<{ c: Cross }> = ({ c }) => {
+  const cap = progresoCapsula(c);
+  const hecha = polStatus(c) === 'hecha';
+  const enCapsula = c.capsula_estado === 'desarrollo' || c.capsula_estado === 'maduro';
+  const cosechada = c.capsula_estado === 'cosechada';
+  const steps = [
+    { label: 'Programada', date: c.fecha_programada, done: true, active: false },
+    { label: 'Polinizada', date: c.fecha_polinizacion, done: hecha, active: false },
+    { label: 'Cápsula', date: cap.cosecha, done: cosechada, active: enCapsula },
+    { label: 'Cosecha', date: cosechada ? c.fecha_polinizacion : cap.cosecha, done: cosechada, active: false },
+  ];
+  const chips: { icon: React.ReactNode; label: string }[] = [];
+  if (c.etiqueta) chips.push({ icon: <Tag size={12} />, label: c.etiqueta });
+  if (c.ubicacion) chips.push({ icon: <MapPin size={12} />, label: c.ubicacion });
+  if (c.prioridad) chips.push({ icon: <Flag size={12} />, label: `Prioridad ${c.prioridad}` });
+  if (c.fuente_polen) chips.push({ icon: <FlaskRound size={12} />, label: c.fuente_polen });
+
+  return (
+    <div className="rounded-2xl border border-app-border bg-app-bg/30 p-4 mb-4">
+      <p className="flex items-center gap-2 text-[11px] font-black uppercase tracking-wider text-brand-primary mb-3"><span className="text-[#C9A24B]"><Flower2 size={14} /></span> Ciclo de polinización</p>
+
+      {/* Línea de tiempo horizontal */}
+      <div className="flex items-start justify-between mb-1">
+        {steps.map((s, i) => (
+          <React.Fragment key={s.label}>
+            <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
+              <span className={s.done ? 'text-emerald-500' : s.active ? 'text-[#C9A24B]' : 'text-brand-dark/25'}>
+                {s.done ? <CheckCircle2 size={20} /> : s.active ? <FlaskRound size={20} /> : <Circle size={20} />}
+              </span>
+              <span className={`text-[10.5px] text-center leading-tight ${s.done || s.active ? 'text-brand-dark/70 font-semibold' : 'text-brand-dark/35'}`}>{s.label}</span>
+              <span className="text-[9.5px] text-brand-dark/35">{s.date ? fmtDayLong(s.date) : '—'}</span>
+            </div>
+            {i < steps.length - 1 && <div className={`h-px flex-1 mt-2.5 ${steps[i + 1].done || steps[i + 1].active ? 'bg-emerald-300' : 'bg-app-border'}`} />}
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* Progreso de cápsula */}
+      {enCapsula && (
+        <div className="mt-3 flex items-center gap-3">
+          <div className="flex-1 h-2 rounded-full bg-app-bg overflow-hidden">
+            <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${cap.pct}%` }} />
+          </div>
+          <span className="text-[11px] font-bold text-brand-dark/55 shrink-0">{cap.pct}%</span>
+          <span className="text-[11px] text-brand-dark/45 shrink-0">cosecha en {cap.dias} d</span>
+        </div>
+      )}
+
+      {/* Datos de planificación */}
+      {chips.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-3">
+          {chips.map((ch, i) => (
+            <span key={i} className="inline-flex items-center gap-1 bg-app-card border border-app-border rounded-full px-2.5 py-1 text-[11px] font-semibold text-brand-dark/60"><span className="text-[#C9A24B]">{ch.icon}</span> {ch.label}</span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default CrossesScreen;
