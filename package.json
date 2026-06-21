@@ -88,7 +88,7 @@
       "dist-electron/**/*"
     ],
     "win": {
-      "icon": "public/assets/icons/brand-logo.png",
+      "icon": "public/sarracenia-logo.png",
       "target": [
         "nsis"
       ]

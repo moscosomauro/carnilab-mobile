@@ -27,7 +27,7 @@ function createWindow() {
     win = new BrowserWindow({
         width: Math.floor(width * 0.9),
         height: Math.floor(height * 0.9),
-        icon: path.join(process.env.VITE_PUBLIC || '', 'assets/icons/brand-logo.png'),
+        icon: path.join(process.env.VITE_PUBLIC || '', 'sarracenia-logo.png'),
         webPreferences: {
             preload: path.join(__dirname, 'preload.mjs'),
             nodeIntegration: false,
