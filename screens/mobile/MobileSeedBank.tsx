@@ -46,9 +46,11 @@ const MobileSeedBank: React.FC = () => {
     setSaving(true);
     try {
       const today = new Date().toISOString();
+      // Respetar la fecha de cosecha elegida (antes se ignoraba y usaba hoy)
+      const fechaCosecha = f.fecha_ingreso ? new Date(f.fecha_ingreso).toISOString() : today;
       const payload: any = {
         nombre: f.especie.trim(), especie: f.especie.trim(), cantidad: Number(f.cantidad) || 0,
-        fecha_ingreso: today, origen: 'propia',
+        fecha_ingreso: fechaCosecha, origen: 'propia',
         estado: estratHoy ? 'estratificando' : f.estado,
         inicio_estratificacion: estratHoy ? today : null, fin_estratificacion: null,
         ubicacion: f.ubicacion, notas: f.notas,
